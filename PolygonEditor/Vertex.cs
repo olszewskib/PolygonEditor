@@ -11,11 +11,13 @@ namespace PolygonEditor
 {
     internal class Vertex
     {
-        public int Index {  get; set; }
+        public int PolygonIndex {  get; set; }
         public double X { get; set; }
         public double Y { get; set; }
         public Vertex? Right { get; set; }
+        public Edge? RightEdge {  get; set; }
         public Vertex? Left { get; set; }
+        public Edge? LeftEdge {  get; set; }
         public Ellipse? Graphic { get; set; }
     }
 }
