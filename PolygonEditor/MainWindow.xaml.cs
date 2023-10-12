@@ -20,11 +20,11 @@ namespace PolygonEditor
     /// </summary>
     public partial class MainWindow : Window
     {
-        private int _pointRadius = 7;
-
         private bool isDragging = false;
         private Point lastPosition;
 
+        // variables that make sense
+        private bool isPolygonForming = false;
         private List<Polygon> polygons = new();
 
 
@@ -33,12 +33,22 @@ namespace PolygonEditor
         {
             InitializeComponent();
         }
+        
+        // General functions
+        private (double,double) GetMousePosition()
+        {
+            var X = Mouse.GetPosition(mainCanvas).X;
+            var Y = Mouse.GetPosition(mainCanvas).Y;
+            return (X, Y);
+        }
+
+        // Graphic initialization
         private Ellipse initPointGraphic()
         {
             Ellipse point = new()
             {
-                Width = _pointRadius,
-                Height = _pointRadius,
+                Width = Vertex.VertexRadius,
+                Height = Vertex.VertexRadius,
                 StrokeThickness = 4,
                 Stroke = Brushes.Blue
             };
@@ -47,106 +57,83 @@ namespace PolygonEditor
             point.MouseLeave += Point_MouseLeave;
             point.MouseUp += Point_MouseUp;
             point.MouseMove += Point_MouseMove;
+            point.MouseDown += Point_MouseDown;
             
             return point;
         }
-        private (double,double) GetMousePosition()
+        private Line initEdgeGraphic(Vertex v1, Vertex v2)
         {
-            var X = Mouse.GetPosition(mainCanvas).X;
-            var Y = Mouse.GetPosition(mainCanvas).Y;
-            return (X, Y);
-        }
-        private void DrawPoint(Vertex v)
-        {
+            if (v1.Graphic is null || v2.Graphic is null) throw new Exception("initEdgeGraphicException");
 
-            Canvas.SetLeft(v.Graphic, v.X-(_pointRadius/2));
-            Canvas.SetTop(v.Graphic, v.Y-(_pointRadius/2));
+            Point center1 = new(Canvas.GetLeft(v1.Graphic) + v1.Graphic.Width / 2, Canvas.GetTop(v1.Graphic) + v1.Graphic.Height / 2);
+            Point center2 = new(Canvas.GetLeft(v2.Graphic) + v2.Graphic.Width / 2, Canvas.GetTop(v2.Graphic) + v2.Graphic.Height / 2);
 
-            mainCanvas.Children.Add(v.Graphic);
-        }
-        private Vertex? FindPoint(Ellipse point)
-        {
-            foreach(var polygon in polygons)
+            Line edge = new()
             {
-                foreach(var vertex in polygon.Vertices)
-                {
-                    if (point == vertex.Graphic) return vertex;
-                }
-            }
-            return null;
-        }
-        private void DragVertex(Vertex vertex, Point newPosition)
-        {
-            double deltaX = newPosition.X - lastPosition.X;
-            double deltaY = newPosition.Y - lastPosition.Y;
+                X1 = center1.X,
+                Y1 = center1.Y,
+                X2 = center2.X,
+                Y2 = center2.Y,
+                Stroke = Brushes.Black,
+                StrokeThickness = 2
+            };
 
-            vertex.X = Canvas.GetLeft(vertex.Graphic) + deltaX;
-            vertex.Y = Canvas.GetTop(vertex.Graphic) + deltaY;
+            edge.MouseEnter += Edge_MouseEnter;
+            edge.MouseLeave += Edge_MouseLeave;
+            edge.MouseMove += Edge_MouseMove;
+            edge.MouseDown += Edge_MouseDown;
+            edge.MouseUp += Edge_MouseUp;
 
-            Canvas.SetLeft(vertex.Graphic, Canvas.GetLeft(vertex.Graphic) + deltaX);
-            Canvas.SetTop(vertex.Graphic, Canvas.GetTop(vertex.Graphic) + deltaY);
-
-            if (vertex.Left is null || vertex.Right is null) throw new Exception("VertexDraggingException: null vertices");
-            if (vertex.LeftEdge is null || vertex.RightEdge is null) throw new Exception("VertexDraggingException: null edges");
-
-            RedrawEdge(vertex.LeftEdge, vertex.Left, vertex);
-            RedrawEdge(vertex.RightEdge, vertex, vertex.Right);
+            return edge;
         }
 
-        // Clean Code up from here
 
+
+
+        // Point events
         private void Point_MouseEnter(object sender, MouseEventArgs e)
         {
             isDragging = false;
-            Ellipse? hoverPoint = sender as Ellipse;
-            if(hoverPoint != null)
+            if (sender is Ellipse hoverPoint)
             {
                 hoverPoint.Stroke = Brushes.Red;
             }
         }
         private void Point_MouseLeave(object sender, MouseEventArgs e)
         {
-            Ellipse? hoverPoint = sender as Ellipse;
-            if(hoverPoint != null)
+            if (sender is Ellipse hoverPoint)
             {
                 hoverPoint.Stroke = Brushes.Blue;
             }
         }
         private void Point_MouseUp(object sender, MouseEventArgs e)
         {
-            Ellipse? hoverPoint = sender as Ellipse;
-            if(hoverPoint != null)
+            if (sender is Ellipse hoverPoint)
             {
                 hoverPoint.ReleaseMouseCapture();
-                isDragging= false;
+                isDragging = false;
             }
         }
         private void Point_MouseMove(object sender, MouseEventArgs e)
         {
             if (!isDragging) return;
 
-            Ellipse? draggedPoint = sender as Ellipse;
-            if (draggedPoint != null)
+            if (sender is Ellipse draggedPoint)
             {
-                var draggedVertex = FindPoint(draggedPoint) ?? throw new Exception("Dragged point not found somehow");
+                var draggedVertex = Vertex.FindVertex(draggedPoint,polygons) ?? throw new Exception("Dragged point not found somehow");
 
                 Point newPosition = e.GetPosition(mainCanvas);
-                DragVertex(draggedVertex, newPosition);
+                Vertex.DragVertex(draggedVertex, newPosition, lastPosition);
 
                 lastPosition = newPosition;
             }
 
         }
-
-
-        // variables that make sense
-        private bool isPolygonForming = false;
-        private void mainCanvas_MouseDown(object sender, MouseButtonEventArgs e)
+        private void Point_MouseDown(object sender, MouseEventArgs e)
         {
-            // checking if point already exists
             if (e.OriginalSource is Ellipse ellipse)
             {
-                var existingVertex = FindPoint(ellipse) ?? throw new Exception("Clicked vertex somehow not found");
+                var existingVertex = Vertex.FindVertex(ellipse, polygons) ?? throw new Exception("Clicked vertex somehow not found");
                 
                 if (isPolygonForming)
                 {
@@ -157,8 +144,8 @@ namespace PolygonEditor
                         var edge = new Edge
                         {
                             Graphic = initEdgeGraphic(lastVertex, firstVertex),
-                            v1 = lastVertex,
-                            v2 = firstVertex,
+                            Left = lastVertex,
+                            Right = firstVertex,
                             PolygonIndex = lastVertex.PolygonIndex
                         };
 
@@ -172,11 +159,74 @@ namespace PolygonEditor
 
                 }
 
+                if (existingVertex.Graphic is null) throw new Exception("MouseDownException: existingVertex.Graphic is null");
                 existingVertex.Graphic.CaptureMouse();
                 isDragging = true;
                 lastPosition = e.GetPosition(mainCanvas);
                 return;
             }
+
+        }
+
+        // Edges Events
+        private void Edge_MouseEnter(object sender, MouseEventArgs e)
+        {
+            isDragging = false;
+            if (sender is Line hoverLine)
+            {
+                hoverLine.Stroke = Brushes.Green;
+            }
+        }
+        private void Edge_MouseLeave(object sender, MouseEventArgs e)
+        {
+            if (sender is Line hoverLine)
+            {
+                hoverLine.Stroke = Brushes.Black;
+            }
+        }
+        private void Edge_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!isDragging) return;
+
+            if (sender is Line draggedLine)
+            {
+                var draggedEdge = Edge.FindEdge(draggedLine,polygons) ?? throw new Exception("Dragged edge not found somehow");
+
+                Point newPosition = e.GetPosition(mainCanvas);
+
+                Edge.DragEdge(draggedEdge,newPosition,lastPosition);
+
+                lastPosition = newPosition;
+            }
+
+        }
+        private void Edge_MouseDown(object sender, MouseEventArgs e)
+        {
+            if(e.OriginalSource is Line line)
+            {
+                var edge = Edge.FindEdge(line, polygons) ?? throw new Exception("Edge_MouseDownException: edge not foune");
+                if (edge.Graphic is null) throw new Exception("Edge_MouseDownException: edge.Graphic is null somehow");
+                edge.Graphic.CaptureMouse();
+                isDragging = true;
+                lastPosition = e.GetPosition(mainCanvas);
+            }
+        }
+        private void Edge_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (sender is Line hoverLine)
+            {
+                hoverLine.ReleaseMouseCapture();
+                isDragging = false;
+            }
+
+        }
+        
+        // Canvas events
+        private void mainCanvas_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            // checking if point already exists
+
+            if (e.OriginalSource is Line || e.OriginalSource is Ellipse) return;
 
             // coordinates of a mouse click
             (var X, var Y) = GetMousePosition();
@@ -185,8 +235,8 @@ namespace PolygonEditor
             var vertex = new Vertex
             {
                 Graphic = initPointGraphic(),
-                X = X - (_pointRadius / 2),
-                Y = Y - (_pointRadius / 2),
+                X = X - (Vertex.VertexRadius / 2),
+                Y = Y - (Vertex.VertexRadius / 2),
             };
 
             // init for forming a polygon 
@@ -206,8 +256,8 @@ namespace PolygonEditor
                 var edge = new Edge
                 {
                     Graphic = initEdgeGraphic(lastVertex,vertex),
-                    v1 = lastVertex,
-                    v2 = vertex,
+                    Left = lastVertex,
+                    Right = vertex,
                     PolygonIndex = vertex.PolygonIndex
                 };
 
@@ -217,39 +267,13 @@ namespace PolygonEditor
             // drawing a point
             polygons[Polygon.Id].AddVertex(vertex);
         }
-
-        private Line initEdgeGraphic(Vertex v1, Vertex v2)
+        private void DrawPoint(Vertex v)
         {
-            Point center1 = new(Canvas.GetLeft(v1.Graphic) + v1.Graphic.Width / 2, Canvas.GetTop(v1.Graphic) + v1.Graphic.Height / 2);
-            Point center2 = new(Canvas.GetLeft(v2.Graphic) + v2.Graphic.Width / 2, Canvas.GetTop(v2.Graphic) + v2.Graphic.Height / 2);
+            Canvas.SetLeft(v.Graphic, v.X-(Vertex.VertexRadius /2));
+            Canvas.SetTop(v.Graphic, v.Y-(Vertex.VertexRadius /2));
 
-            Line edge = new()
-            {
-                X1 = center1.X,
-                Y1 = center1.Y,
-                X2 = center2.X,
-                Y2 = center2.Y,
-                Stroke = Brushes.Black,
-                StrokeThickness = 2
-            };
-
-            return edge;
+            mainCanvas.Children.Add(v.Graphic);
         }
-
-        private void RedrawEdge(Edge edge, Vertex v1, Vertex v2)
-        {
-            Point center1 = new(Canvas.GetLeft(v1.Graphic) + v1.Graphic.Width / 2, Canvas.GetTop(v1.Graphic) + v1.Graphic.Height / 2);
-            Point center2 = new(Canvas.GetLeft(v2.Graphic) + v2.Graphic.Width / 2, Canvas.GetTop(v2.Graphic) + v2.Graphic.Height / 2);
-
-            if (edge.Graphic == null) throw new Exception("Redrawing Edge");
-
-            edge.Graphic.X1 = center1.X;
-            edge.Graphic.Y1 = center1.Y;
-            edge.Graphic.X2 = center2.X;
-            edge.Graphic.Y2 = center2.Y;
-
-        }
-
         private void DrawEdge(Edge e)
         {
             polygons[Polygon.Id].AddEdge(e);

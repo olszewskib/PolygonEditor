@@ -34,7 +34,6 @@ namespace PolygonEditor
             LastVertex = v;
             Vertices.Add(v);
         }
-
         public void AddEdge(Edge e)
         {
             // last vertex jest zmieniany pozniej
