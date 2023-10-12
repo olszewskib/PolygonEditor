@@ -23,10 +23,25 @@ namespace PolygonEditor
         }
         public void AddVertex(Vertex v)
         {
-            if(Vertices.Count == 0) FirstVertex = v;
+            // adding neighbours
+            LastVertex.Right = v;
+            v.Left = LastVertex;
 
+            // adding missing edge
+            v.LeftEdge = LastVertex.RightEdge;
+
+            // adding new vertex
             LastVertex = v;
             Vertices.Add(v);
+        }
+
+        public void AddEdge(Edge e)
+        {
+            // last vertex jest zmieniany pozniej
+            LastVertex.RightEdge = e;
+
+            // adding new edge
+            Edges.Add(e);
         }
     }
 }

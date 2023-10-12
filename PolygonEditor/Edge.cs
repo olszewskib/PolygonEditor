@@ -12,6 +12,6 @@ namespace PolygonEditor
         public int PolygonIndex { get; set; }
         public Vertex? v1 { get; set; }
         public Vertex? v2 { get; set; }
-        public Line? edge { get; set; }
+        public Line? Graphic { get; set; }
     }
 }
