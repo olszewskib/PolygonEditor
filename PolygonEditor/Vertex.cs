@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
@@ -49,6 +50,25 @@ namespace PolygonEditor
 
             Edge.RedrawEdge(vertex.LeftEdge, vertex.Left, vertex);
             Edge.RedrawEdge(vertex.RightEdge, vertex, vertex.Right);
+        }
+
+        public static void RemoveVertex(Vertex vertex, List<Polygon> polygons)
+        {
+            var right = vertex.Right ?? throw new Exception("RemoveVertexException: no right neighbour");
+            var left = vertex.Left ?? throw new Exception("RemoveVertexException: no left neighbour");
+            var polygon = polygons[vertex.PolygonIndex];
+
+            // removing vertex
+            right.Left = left;
+            left.Right = right;
+            polygon.Vertices.Remove(vertex);
+
+            // removing edges
+            if (vertex.LeftEdge is null || vertex.RightEdge is null) throw new Exception("RemoveVertexException: null edges");
+            polygon.Edges.Remove(vertex.LeftEdge);
+            polygon.Edges.Remove(vertex.RightEdge);
+
+            //Todo do i still need to null pointer for edges and vertex ? 
         }
     }
 }

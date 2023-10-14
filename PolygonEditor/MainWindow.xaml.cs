@@ -58,7 +58,8 @@ namespace PolygonEditor
             point.MouseUp += Point_MouseUp;
             point.MouseMove += Point_MouseMove;
             point.MouseDown += Point_MouseDown;
-            
+
+
             return point;
         }
         private Line initEdgeGraphic(Vertex v1, Vertex v2)
@@ -83,11 +84,14 @@ namespace PolygonEditor
             edge.MouseMove += Edge_MouseMove;
             edge.MouseDown += Edge_MouseDown;
             edge.MouseUp += Edge_MouseUp;
+            
 
             return edge;
         }
 
 
+        // Variables for events
+        private Vertex? vertexToRemove;
 
 
         // Point events
@@ -129,11 +133,25 @@ namespace PolygonEditor
             }
 
         }
-        private void Point_MouseDown(object sender, MouseEventArgs e)
+        private void Point_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.OriginalSource is Ellipse ellipse)
             {
                 var existingVertex = Vertex.FindVertex(ellipse, polygons) ?? throw new Exception("Clicked vertex somehow not found");
+
+                // menu options for a vertex
+                if (e.ChangedButton == MouseButton.Right && !isPolygonForming)
+                {
+                    //Todo add a warning that a polygon is forming if clicked
+                    var contextMenu = FindResource("VertexMenu") as ContextMenu;
+                    if(contextMenu is not null)
+                    {
+                        vertexToRemove = existingVertex;
+                        contextMenu.PlacementTarget = ellipse;
+                        contextMenu.IsOpen = true;
+                    }
+                    return;
+                }
                 
                 if (isPolygonForming)
                 {
@@ -224,8 +242,10 @@ namespace PolygonEditor
         // Canvas events
         private void mainCanvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            // checking if point already exists
+            // Later this will give options to clear canvas ect
+            if (e.ChangedButton == MouseButton.Right) return;
 
+            // Check if the click is on the exisitng object
             if (e.OriginalSource is Line || e.OriginalSource is Ellipse) return;
 
             // coordinates of a mouse click
@@ -276,8 +296,36 @@ namespace PolygonEditor
         }
         private void DrawEdge(Edge e)
         {
-            polygons[Polygon.Id].AddEdge(e);
+            polygons[e.PolygonIndex].AddEdge(e);
             mainCanvas.Children.Add(e.Graphic);
+        }
+
+        private void MenuItem_Click_RemoveVertex(object sender, RoutedEventArgs e)
+        {
+            
+            if (vertexToRemove is null) return;
+            if (vertexToRemove.LeftEdge is null || vertexToRemove.RightEdge is null) throw new Exception("VertexRemovalException: null edges");
+
+            mainCanvas.Children.Remove(vertexToRemove.RightEdge.Graphic);
+            mainCanvas.Children.Remove(vertexToRemove.LeftEdge.Graphic);
+            mainCanvas.Children.Remove(vertexToRemove.Graphic);
+
+            Vertex.RemoveVertex(vertexToRemove, polygons);
+            // add missing edge!
+
+            if (vertexToRemove.Left is null || vertexToRemove.Right is null) throw new Exception("VertexRemovalException: null neighbours");
+            var edge = new Edge
+            {
+                Graphic = initEdgeGraphic(vertexToRemove.Left, vertexToRemove.Right),
+                Left = vertexToRemove.Left,
+                Right = vertexToRemove.Right,
+                PolygonIndex = vertexToRemove.PolygonIndex
+            };
+            DrawEdge(edge);
+
+            vertexToRemove.Right.LeftEdge = edge;
+            vertexToRemove.Left.RightEdge = edge;
+
         }
     }
 }

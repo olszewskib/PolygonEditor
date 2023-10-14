@@ -6,12 +6,15 @@
         xmlns:local="clr-namespace:PolygonEditor"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
+    <Window.Resources>
+        <ContextMenu x:Key="VertexMenu">
+            <MenuItem Header="Remove Vertex" Click="MenuItem_Click_RemoveVertex"/>
+        </ContextMenu>
+    </Window.Resources>
     <Canvas Name="mainCanvas" 
             MouseDown="mainCanvas_MouseDown"
-            
             IsEnabled="True" 
             Focusable="True" 
             Background="AliceBlue">
-
     </Canvas>
 </Window>
