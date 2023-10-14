@@ -36,7 +36,8 @@ namespace PolygonEditor
         }
         public void AddEdge(Edge e)
         {
-            // last vertex jest zmieniany pozniej
+            // last vertex is changed after
+            // needed for vertex removal
             if(e.Left == LastVertex) LastVertex.RightEdge = e;
 
             // adding new edge

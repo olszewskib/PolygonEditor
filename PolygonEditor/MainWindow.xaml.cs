@@ -302,6 +302,7 @@ namespace PolygonEditor
 
         private void MenuItem_Click_RemoveVertex(object sender, RoutedEventArgs e)
         {
+            //Todo if user wants to remove a vertex from a triangel dont let him or delete the whole polygon
             
             if (vertexToRemove is null) return;
             if (vertexToRemove.LeftEdge is null || vertexToRemove.RightEdge is null) throw new Exception("VertexRemovalException: null edges");
