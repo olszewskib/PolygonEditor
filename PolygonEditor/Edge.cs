@@ -67,5 +67,17 @@ namespace PolygonEditor
             edge.Graphic.Y2 = center2.Y;
 
         }
+        public static void SplitEdgeWithVertex(Edge edge, Vertex vertex)
+        {
+            var right = edge.Right ?? throw new Exception("SplitEdgeWithVertexException: right vertex is null");
+            var left = edge.Left ?? throw new Exception("SplitEdgeWithVertexException: left vertex is null");
+
+            right.Left = vertex;
+            left.Right = vertex;
+
+            vertex.Right = right;
+            vertex.Left = left;
+
+        }
     }
 }

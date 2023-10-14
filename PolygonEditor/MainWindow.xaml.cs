@@ -27,7 +27,9 @@ namespace PolygonEditor
         private bool isPolygonForming = false;
         private List<Polygon> polygons = new();
 
-
+        // Variables for events
+        private Vertex? vertexToRemove;
+        private Edge? edgeForVertexAddition;
 
         public MainWindow()
         {
@@ -88,11 +90,6 @@ namespace PolygonEditor
 
             return edge;
         }
-
-
-        // Variables for events
-        private Vertex? vertexToRemove;
-
 
         // Point events
         private void Point_MouseEnter(object sender, MouseEventArgs e)
@@ -218,11 +215,26 @@ namespace PolygonEditor
             }
 
         }
-        private void Edge_MouseDown(object sender, MouseEventArgs e)
+        private void Edge_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if(e.OriginalSource is Line line)
             {
                 var edge = Edge.FindEdge(line, polygons) ?? throw new Exception("Edge_MouseDownException: edge not foune");
+
+                // menu option for edge
+                if (e.ChangedButton == MouseButton.Right && !isPolygonForming)
+                {
+                    //Todo add a warning that a polygon is forming if clicked
+                    var contextMenu = FindResource("EdgeMenu") as ContextMenu;
+                    if(contextMenu is not null)
+                    {
+                        edgeForVertexAddition = edge;
+                        contextMenu.PlacementTarget = line;
+                        contextMenu.IsOpen = true;
+                    }
+                    return;
+                }
+
                 if (edge.Graphic is null) throw new Exception("Edge_MouseDownException: edge.Graphic is null somehow");
                 edge.Graphic.CaptureMouse();
                 isDragging = true;
@@ -300,6 +312,7 @@ namespace PolygonEditor
             mainCanvas.Children.Add(e.Graphic);
         }
 
+        // MenuItems events
         private void MenuItem_Click_RemoveVertex(object sender, RoutedEventArgs e)
         {
             //Todo if user wants to remove a vertex from a triangel dont let him or delete the whole polygon
@@ -327,6 +340,47 @@ namespace PolygonEditor
             vertexToRemove.Right.LeftEdge = edge;
             vertexToRemove.Left.RightEdge = edge;
 
+        }
+
+        private void MenuItem_Click_AddVertex(object sender, RoutedEventArgs e)
+        {
+            if (edgeForVertexAddition is null) return;
+
+            // Erase old edge
+            mainCanvas.Children.Remove(edgeForVertexAddition.Graphic);
+
+            var left = edgeForVertexAddition.Left ?? throw new Exception("SplitException: left end is null");
+            var right = edgeForVertexAddition.Right ?? throw new Exception("SplitException: right end is null");
+            System.Windows.Point leftCenter = new(Canvas.GetLeft(left.Graphic) + left.Graphic.Width / 2, Canvas.GetTop(left.Graphic) + left.Graphic.Height / 2);
+            System.Windows.Point rightCenter = new(Canvas.GetLeft(right.Graphic) + right.Graphic.Width / 2, Canvas.GetTop(right.Graphic) + right.Graphic.Height / 2);
+
+            // vertex init
+            var vertex = new Vertex
+            {
+                Graphic = initPointGraphic(),
+                X = (leftCenter.X + rightCenter.X)/2,
+                Y = (leftCenter.Y + rightCenter.Y) / 2,
+                PolygonIndex = edgeForVertexAddition.PolygonIndex
+            };
+            DrawPoint(vertex);
+
+            var leftEdge = new Edge
+            {
+                Graphic = initEdgeGraphic(edgeForVertexAddition.Left, vertex),
+                Left = edgeForVertexAddition.Left,
+                Right = vertex,
+                PolygonIndex = edgeForVertexAddition.PolygonIndex
+            };
+
+            var rightEdge = new Edge
+            {
+                Graphic = initEdgeGraphic(vertex,edgeForVertexAddition.Right),
+                Left = vertex,
+                Right = edgeForVertexAddition.Right,
+                PolygonIndex = edgeForVertexAddition.PolygonIndex
+            };
+            DrawEdge(leftEdge);
+            DrawEdge(rightEdge);
         }
     }
 }
