@@ -97,6 +97,7 @@ namespace PolygonEditor
             if (menuEdge is null) throw new Exception("isParallelValidException");
             if (menuEdge.Right.RightEdge.Constraint == Constraint.Parallel) return false;
             if (menuEdge.Left.LeftEdge.Constraint == Constraint.Parallel) return false;
+            if (menuEdge.Constraint == Constraint.Perpendicular) return false;
             return true;
         }
         private bool isPerpendicularValid()
@@ -104,6 +105,7 @@ namespace PolygonEditor
             if (menuEdge is null) throw new Exception("isPerpendicularValidException");
             if (menuEdge.Right.RightEdge.Constraint == Constraint.Perpendicular) return false;
             if (menuEdge.Left.LeftEdge.Constraint == Constraint.Perpendicular) return false;
+            if (menuEdge.Constraint == Constraint.Parallel) return false;
             return true;
         }
         private ContextMenu? initContextMenu()
@@ -363,6 +365,8 @@ namespace PolygonEditor
             mainCanvas.Children.Remove(menuVertex.RightEdge.Graphic);
             mainCanvas.Children.Remove(menuVertex.LeftEdge.Graphic);
             mainCanvas.Children.Remove(menuVertex.Graphic);
+            if (menuVertex.LeftEdge.Icon is Image leftIcon) mainCanvas.Children.Remove(leftIcon);
+            if (menuVertex.RightEdge.Icon is Image rightIcon) mainCanvas.Children.Remove(rightIcon);
 
             Vertex.RemoveVertex(menuVertex, polygons);
             // add missing edge!
@@ -388,6 +392,7 @@ namespace PolygonEditor
 
             // Erase old edge
             mainCanvas.Children.Remove(menuEdge.Graphic);
+            mainCanvas.Children.Remove(menuEdge.Icon);
 
             var left = menuEdge.Left ?? throw new Exception("SplitException: left end is null");
             var right = menuEdge.Right ?? throw new Exception("SplitException: right end is null");
