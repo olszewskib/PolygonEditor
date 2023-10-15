@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -31,6 +32,9 @@ namespace PolygonEditor
         // Variables for menu events
         private Vertex? menuVertex;
         private Edge? menuEdge;
+
+        //
+        private Polygon? polygonToMove;
 
         public MainWindow()
         {
@@ -296,14 +300,27 @@ namespace PolygonEditor
         // Canvas events
         private void mainCanvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            // coordinates of a mouse click
+            (var X, var Y) = GetMousePosition();
+
             // Later this will give options to clear canvas ect
-            if (e.ChangedButton == MouseButton.Right) return;
+            if (e.ChangedButton == MouseButton.Right)
+            {
+                if (e.OriginalSource is Canvas canvas)
+                {
+                    polygonToMove = Polygon.FindPolygon(new System.Windows.Point(X, Y), polygons);
+                    if (polygonToMove is null) return;
+
+                    canvas.CaptureMouse();
+                    isDragging = true;
+                    lastPosition = e.GetPosition(mainCanvas);
+                    return;
+                }
+            }
 
             // Check if the click is on the exisitng object
             if (e.OriginalSource is Line || e.OriginalSource is Ellipse) return;
 
-            // coordinates of a mouse click
-            (var X, var Y) = GetMousePosition();
 
             // vertex init
             var vertex = new Vertex
@@ -341,6 +358,42 @@ namespace PolygonEditor
             // drawing a point
             polygons[Polygon.Id].AddVertex(vertex);
         }
+        private void mainCanvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!isDragging) return;
+
+            if (sender is Canvas canvas)
+            {
+                if (polygonToMove is null) return;
+
+                Point newPosition = e.GetPosition(mainCanvas);
+
+                // move
+                double deltaX = newPosition.X - lastPosition.X;
+                double deltaY = newPosition.Y - lastPosition.Y;
+                foreach(var vertex in polygonToMove.Vertices)
+                {
+                    var X = Canvas.GetLeft(vertex.Graphic);
+                    var Y = Canvas.GetTop(vertex.Graphic);
+
+                    Vertex.DragVertex(vertex, new System.Windows.Point(X + deltaX, Y + deltaY), new System.Windows.Point(X, Y));
+                }
+
+                lastPosition = newPosition;
+
+            }
+        }
+        private void mainCanvas_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if(sender is Canvas canvas)
+            {
+                canvas.ReleaseMouseCapture();
+                isDragging = false;
+            }
+
+        }
+        
+        // Drawing Functions
         private void DrawPoint(Vertex v)
         {
             Canvas.SetLeft(v.Graphic, v.X-(Vertex.VertexRadius /2));
@@ -385,7 +438,6 @@ namespace PolygonEditor
             menuVertex.Left.RightEdge = edge;
 
         }
-
         private void MenuItem_Click_SplitEdge(object sender, RoutedEventArgs e)
         {
             if (menuEdge is null) return;
@@ -438,7 +490,6 @@ namespace PolygonEditor
             vertex.LeftEdge = leftEdge;
             vertex.RightEdge = rightEdge;
         }
-
         private void MenuItem_Click_ParallelConstraint(object sender, RoutedEventArgs e)
         {
             if (menuEdge is null) return;

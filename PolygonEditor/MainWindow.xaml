@@ -23,6 +23,8 @@
     </Window.Resources>
     <Canvas Name="mainCanvas" 
             MouseDown="mainCanvas_MouseDown"
+            MouseMove="mainCanvas_MouseMove"
+            MouseUp="mainCanvas_MouseUp"
             IsEnabled="True" 
             Focusable="True" 
             Background="AliceBlue">

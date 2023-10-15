@@ -43,5 +43,14 @@ namespace PolygonEditor
             // adding new edge
             Edges.Add(e);
         }
+        public static Polygon? FindPolygon(System.Windows.Point point, List<Polygon> polygons)
+        {
+            foreach(var polygon in polygons)
+            {
+                if (RayCasting.isVertexInPolygon(point, polygon)) return polygon;
+            }
+
+            return null;
+        }
     }
 }
