@@ -237,6 +237,11 @@ namespace PolygonEditor
             {
                 hoverLine.Stroke = Brushes.Green;
             }
+            if(sender is BresLine line)
+            {
+                line.LineColor = Brushes.Green;
+
+            }
         }
         private void Edge_MouseLeave(object sender, MouseEventArgs e)
         {
@@ -300,6 +305,12 @@ namespace PolygonEditor
         // Canvas events
         private void mainCanvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            var test = new BresLine();
+            test.Start = (new System.Windows.Point(0, 0));
+            test.Start = (new System.Windows.Point(100, 200));
+            test.MouseEnter += Edge_MouseEnter;
+            mainCanvas.Children.Add(test);
+
             // coordinates of a mouse click
             (var X, var Y) = GetMousePosition();
 

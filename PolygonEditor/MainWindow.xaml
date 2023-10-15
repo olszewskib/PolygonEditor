@@ -28,5 +28,6 @@
             IsEnabled="True" 
             Focusable="True" 
             Background="AliceBlue">
+        <local:BresLine/>
     </Canvas>
 </Window>
