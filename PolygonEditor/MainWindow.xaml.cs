@@ -22,14 +22,15 @@ namespace PolygonEditor
     {
         private bool isDragging = false;
         private Point lastPosition;
+        private int iconSize = 20;
 
         // variables that make sense
         private bool isPolygonForming = false;
         private List<Polygon> polygons = new();
 
-        // Variables for events
-        private Vertex? vertexToRemove;
-        private Edge? edgeForVertexAddition;
+        // Variables for menu events
+        private Vertex? menuVertex;
+        private Edge? menuEdge;
 
         public MainWindow()
         {
@@ -91,6 +92,45 @@ namespace PolygonEditor
             return edge;
         }
 
+        private bool isParallelValid()
+        {
+            if (menuEdge is null) throw new Exception("isParallelValidException");
+            if (menuEdge.Right.RightEdge.Constraint == Constraint.Parallel) return false;
+            if (menuEdge.Left.LeftEdge.Constraint == Constraint.Parallel) return false;
+            return true;
+        }
+        private bool isPerpendicularValid()
+        {
+            if (menuEdge is null) throw new Exception("isPerpendicularValidException");
+            if (menuEdge.Right.RightEdge.Constraint == Constraint.Perpendicular) return false;
+            if (menuEdge.Left.LeftEdge.Constraint == Constraint.Perpendicular) return false;
+            return true;
+        }
+        private ContextMenu? initContextMenu()
+        {
+            if (menuEdge is null) return null;
+
+            var contextMenu = new ContextMenu();
+            var split = new MenuItem { Header = "Split Edge" };
+            split.Click += MenuItem_Click_SplitEdge;
+
+            var parallel = new MenuItem();
+            parallel.Header = menuEdge.Constraint == Constraint.Parallel ? "Remove parallel constraint" : "Add parallel constraint";
+            parallel.Click += MenuItem_Click_ParallelConstraint;
+            parallel.IsEnabled = isParallelValid();
+
+            var perpendicular = new MenuItem();
+            perpendicular.Header = menuEdge.Constraint == Constraint.Perpendicular ? "Remove perpendicular constraint" : "Add perpendicular constraint";
+            perpendicular.Click += MenuItem_Click_PerpendicularConstraint;
+            perpendicular.IsEnabled = isPerpendicularValid();
+
+            contextMenu.Items.Add(split);
+            contextMenu.Items.Add(parallel);
+            contextMenu.Items.Add(perpendicular);
+
+            return contextMenu;
+        }
+
         // Point events
         private void Point_MouseEnter(object sender, MouseEventArgs e)
         {
@@ -143,7 +183,7 @@ namespace PolygonEditor
                     var contextMenu = FindResource("VertexMenu") as ContextMenu;
                     if(contextMenu is not null)
                     {
-                        vertexToRemove = existingVertex;
+                        menuVertex = existingVertex;
                         contextMenu.PlacementTarget = ellipse;
                         contextMenu.IsOpen = true;
                     }
@@ -225,10 +265,10 @@ namespace PolygonEditor
                 if (e.ChangedButton == MouseButton.Right && !isPolygonForming)
                 {
                     //Todo add a warning that a polygon is forming if clicked
-                    var contextMenu = FindResource("EdgeMenu") as ContextMenu;
+                    menuEdge = edge;
+                    var contextMenu = initContextMenu();
                     if(contextMenu is not null)
                     {
-                        edgeForVertexAddition = edge;
                         contextMenu.PlacementTarget = line;
                         contextMenu.IsOpen = true;
                     }
@@ -317,43 +357,41 @@ namespace PolygonEditor
         {
             //Todo if user wants to remove a vertex from a triangel dont let him or delete the whole polygon
             
-            if (vertexToRemove is null) return;
-            if (vertexToRemove.LeftEdge is null || vertexToRemove.RightEdge is null) throw new Exception("VertexRemovalException: null edges");
+            if (menuVertex is null) return;
+            if (menuVertex.LeftEdge is null || menuVertex.RightEdge is null) throw new Exception("VertexRemovalException: null edges");
 
-            mainCanvas.Children.Remove(vertexToRemove.RightEdge.Graphic);
-            mainCanvas.Children.Remove(vertexToRemove.LeftEdge.Graphic);
-            mainCanvas.Children.Remove(vertexToRemove.Graphic);
+            mainCanvas.Children.Remove(menuVertex.RightEdge.Graphic);
+            mainCanvas.Children.Remove(menuVertex.LeftEdge.Graphic);
+            mainCanvas.Children.Remove(menuVertex.Graphic);
 
-            Vertex.RemoveVertex(vertexToRemove, polygons);
+            Vertex.RemoveVertex(menuVertex, polygons);
             // add missing edge!
 
-            if (vertexToRemove.Left is null || vertexToRemove.Right is null) throw new Exception("VertexRemovalException: null neighbours");
+            if (menuVertex.Left is null || menuVertex.Right is null) throw new Exception("VertexRemovalException: null neighbours");
             var edge = new Edge
             {
-                Graphic = initEdgeGraphic(vertexToRemove.Left, vertexToRemove.Right),
-                Left = vertexToRemove.Left,
-                Right = vertexToRemove.Right,
-                PolygonIndex = vertexToRemove.PolygonIndex
+                Graphic = initEdgeGraphic(menuVertex.Left, menuVertex.Right),
+                Left = menuVertex.Left,
+                Right = menuVertex.Right,
+                PolygonIndex = menuVertex.PolygonIndex
             };
             DrawEdge(edge);
 
-            vertexToRemove.Right.LeftEdge = edge;
-            vertexToRemove.Left.RightEdge = edge;
+            menuVertex.Right.LeftEdge = edge;
+            menuVertex.Left.RightEdge = edge;
 
         }
 
-        private void MenuItem_Click_AddVertex(object sender, RoutedEventArgs e)
+        private void MenuItem_Click_SplitEdge(object sender, RoutedEventArgs e)
         {
-            if (edgeForVertexAddition is null) return;
+            if (menuEdge is null) return;
 
             // Erase old edge
-            mainCanvas.Children.Remove(edgeForVertexAddition.Graphic);
+            mainCanvas.Children.Remove(menuEdge.Graphic);
 
-            var left = edgeForVertexAddition.Left ?? throw new Exception("SplitException: left end is null");
-            var right = edgeForVertexAddition.Right ?? throw new Exception("SplitException: right end is null");
-            if (left.Graphic is null || right.Graphic is null) throw new Exception("SplitException: graphics are null");
-            System.Windows.Point leftCenter = new(Canvas.GetLeft(left.Graphic) + left.Graphic.Width / 2, Canvas.GetTop(left.Graphic) + left.Graphic.Height / 2);
-            System.Windows.Point rightCenter = new(Canvas.GetLeft(right.Graphic) + right.Graphic.Width / 2, Canvas.GetTop(right.Graphic) + right.Graphic.Height / 2);
+            var left = menuEdge.Left ?? throw new Exception("SplitException: left end is null");
+            var right = menuEdge.Right ?? throw new Exception("SplitException: right end is null");
+            (var leftCenter, var rightCenter) = Edge.getEndpoints(menuEdge);
 
             // vertex init
             var vertex = new Vertex
@@ -361,7 +399,7 @@ namespace PolygonEditor
                 Graphic = initPointGraphic(),
                 X = (leftCenter.X + rightCenter.X)/2,
                 Y = (leftCenter.Y + rightCenter.Y) / 2,
-                PolygonIndex = edgeForVertexAddition.PolygonIndex,
+                PolygonIndex = menuEdge.PolygonIndex,
                 Left = left,
                 Right = right,
             };
@@ -370,19 +408,19 @@ namespace PolygonEditor
 
             var leftEdge = new Edge
             {
-                Graphic = initEdgeGraphic(edgeForVertexAddition.Left, vertex),
-                Left = edgeForVertexAddition.Left,
+                Graphic = initEdgeGraphic(menuEdge.Left, vertex),
+                Left = menuEdge.Left,
                 Right = vertex,
-                PolygonIndex = edgeForVertexAddition.PolygonIndex,
+                PolygonIndex = menuEdge.PolygonIndex,
             };
             DrawEdge(leftEdge);
 
             var rightEdge = new Edge
             {
-                Graphic = initEdgeGraphic(vertex,edgeForVertexAddition.Right),
+                Graphic = initEdgeGraphic(vertex,menuEdge.Right),
                 Left = vertex,
-                Right = edgeForVertexAddition.Right,
-                PolygonIndex = edgeForVertexAddition.PolygonIndex
+                Right = menuEdge.Right,
+                PolygonIndex = menuEdge.PolygonIndex
             };
             DrawEdge(rightEdge);
 
@@ -394,6 +432,90 @@ namespace PolygonEditor
 
             vertex.LeftEdge = leftEdge;
             vertex.RightEdge = rightEdge;
+        }
+
+        private void MenuItem_Click_ParallelConstraint(object sender, RoutedEventArgs e)
+        {
+            if (menuEdge is null) return;
+
+            if(menuEdge.Constraint == Constraint.Parallel)
+            {
+                menuEdge.Constraint = Constraint.None;
+                if(menuEdge.Icon is not null)
+                {
+                    mainCanvas.Children.Remove(menuEdge.Icon);
+                    menuEdge.Icon = null;
+                }
+                return;
+            }
+
+            var left = menuEdge.Left ?? throw new Exception("ConstraintException: left end is null");
+            var right = menuEdge.Right ?? throw new Exception("ConstraintException: left end is null");
+            (var leftCenter, var rightCenter) = Edge.getEndpoints(menuEdge);
+
+            var vertexToMove = leftCenter.Y <= rightCenter.Y ? (left,leftCenter) : (right,rightCenter);
+            var delta = Math.Abs(leftCenter.Y - rightCenter.Y);
+            var newPosition = new System.Windows.Point(vertexToMove.Item2.X, vertexToMove.Item2.Y + delta);
+
+            Vertex.DragVertex(vertexToMove.Item1, newPosition, vertexToMove.Item2);
+
+            menuEdge.Constraint = Constraint.Parallel;
+
+            var icon = new Image()
+            {
+                Source = new BitmapImage(new Uri("Resources/horizontal.png", UriKind.Relative)),
+                Width = iconSize,
+                Height = iconSize,
+            };
+
+            Canvas.SetLeft(icon, ((leftCenter.X + rightCenter.X) / 2) - iconSize/2);
+            Canvas.SetTop(icon, newPosition.Y);
+            mainCanvas.Children.Add(icon);
+            menuEdge.Icon = icon;
+
+            //if(e.OriginalSource is MenuItem item)
+            //{
+            //    item.IsChecked = true;
+            //}
+        }
+        private void MenuItem_Click_PerpendicularConstraint(object sender, RoutedEventArgs e)
+        {
+            if (menuEdge is null) return;
+
+            if(menuEdge.Constraint == Constraint.Perpendicular)
+            {
+                menuEdge.Constraint = Constraint.None;
+                if(menuEdge.Icon is not null)
+                {
+                    mainCanvas.Children.Remove(menuEdge.Icon);
+                    menuEdge.Icon = null;
+                }
+                return;
+            }
+
+            var left = menuEdge.Left ?? throw new Exception("ConstraintException: left end is null");
+            var right = menuEdge.Right ?? throw new Exception("ConstraintException: left end is null");
+            (var leftCenter, var rightCenter) = Edge.getEndpoints(menuEdge);
+
+            var vertexToMove = leftCenter.X <= rightCenter.X ? (left,leftCenter) : (right,rightCenter);
+            var delta = Math.Abs(leftCenter.X - rightCenter.X);
+            var newPosition = new System.Windows.Point(vertexToMove.Item2.X + delta, vertexToMove.Item2.Y);
+
+            Vertex.DragVertex(vertexToMove.Item1, newPosition, vertexToMove.Item2);
+
+            menuEdge.Constraint = Constraint.Perpendicular;
+
+            var icon = new Image()
+            {
+                Source = new BitmapImage(new Uri("Resources/vertical.png", UriKind.Relative)),
+                Width = iconSize,
+                Height = iconSize
+            };
+
+            Canvas.SetLeft(icon, newPosition.X);
+            Canvas.SetTop(icon, ((leftCenter.Y + rightCenter.Y) / 2) - iconSize/2);
+            mainCanvas.Children.Add(icon);
+            menuEdge.Icon = icon;
         }
     }
 }

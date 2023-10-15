@@ -7,4 +7,14 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Remove="horizontal.png" />
+    <None Remove="vertical.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\horizontal.png" />
+    <Resource Include="Resources\vertical.png" />
+  </ItemGroup>
+
 </Project>

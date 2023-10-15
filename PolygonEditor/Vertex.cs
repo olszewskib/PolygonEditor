@@ -36,8 +36,22 @@ namespace PolygonEditor
         }
         public static void DragVertex(Vertex vertex, System.Windows.Point newPosition, System.Windows.Point lastPosition)
         {
-            double deltaX = newPosition.X - lastPosition.X;
-            double deltaY = newPosition.Y - lastPosition.Y;
+            double deltaX = 0;
+            double deltaY = 0;
+
+            if (vertex.LeftEdge.Constraint == Constraint.None && vertex.RightEdge.Constraint == Constraint.None)
+            {
+                deltaX = newPosition.X - lastPosition.X;
+                deltaY = newPosition.Y - lastPosition.Y;
+            }
+            if (vertex.LeftEdge.Constraint == Constraint.Parallel || vertex.RightEdge.Constraint == Constraint.Parallel)
+            {
+                deltaX = newPosition.X - lastPosition.X;
+            }
+            if (vertex.LeftEdge.Constraint == Constraint.Perpendicular || vertex.RightEdge.Constraint == Constraint.Perpendicular)
+            {
+                deltaY = newPosition.Y - lastPosition.Y;
+            }
 
             vertex.X = Canvas.GetLeft(vertex.Graphic) + deltaX;
             vertex.Y = Canvas.GetTop(vertex.Graphic) + deltaY;

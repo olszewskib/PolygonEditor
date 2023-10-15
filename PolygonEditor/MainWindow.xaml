@@ -11,7 +11,14 @@
             <MenuItem Header="Remove Vertex" Click="MenuItem_Click_RemoveVertex"/>
         </ContextMenu>
         <ContextMenu x:Key="EdgeMenu">
-            <MenuItem Header="Split edge" Click="MenuItem_Click_AddVertex"/>
+            <MenuItem Name="SplitEdge"
+                      Header="Split edge"
+                      IsCheckable="False"
+                      Click="MenuItem_Click_SplitEdge"/>
+            <MenuItem x:Name="ParallelConstraint"
+                      Header="Parallel constraint"
+                      Click="MenuItem_Click_ParallelConstraint"/>
+            <MenuItem Header="Perpendicular constarint" Click="MenuItem_Click_PerpendicularConstraint"/>
         </ContextMenu>
     </Window.Resources>
     <Canvas Name="mainCanvas" 

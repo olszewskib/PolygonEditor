@@ -9,12 +9,21 @@ using System.Windows.Shapes;
 
 namespace PolygonEditor
 {
+    internal enum Constraint
+    {
+        None,
+        Parallel,
+        Perpendicular
+    }
+
     internal class Edge
     {
         public int PolygonIndex { get; set; }
         public Vertex? Left { get; set; }
         public Vertex? Right { get; set; }
         public Line? Graphic { get; set; }
+        public Image? Icon { get; set; }
+        public Constraint Constraint { get; set; } = Constraint.None;
         public static Edge? FindEdge(Line line, List<Polygon> polygons)
         {
             foreach(var polygon in polygons)
@@ -32,8 +41,23 @@ namespace PolygonEditor
             if(edge.Left.Left is null || edge.Right.Right is null) throw new Exception("DragEdgeException: neighbour vertices are null");
             if(edge.Left.LeftEdge is null || edge.Right.RightEdge is null) throw new Exception("DragEdgeException: neighbour edges are null");
 
-            double deltaX = newPosition.X - lastPosition.X;
-            double deltaY = newPosition.Y - lastPosition.Y;
+            double deltaX = 0;
+            double deltaY = 0;
+            
+            if (edge.Left.LeftEdge.Constraint == Constraint.None && edge.Right.RightEdge.Constraint == Constraint.None)
+            {
+                deltaX = newPosition.X - lastPosition.X;
+                deltaY = newPosition.Y - lastPosition.Y;
+            }
+            if (edge.Left.LeftEdge.Constraint == Constraint.Parallel || edge.Right.RightEdge.Constraint == Constraint.Parallel)
+            {
+                deltaX = newPosition.X - lastPosition.X;
+            }
+            if (edge.Left.LeftEdge.Constraint == Constraint.Perpendicular || edge.Right.RightEdge.Constraint == Constraint.Perpendicular)
+            {
+                deltaY = newPosition.Y - lastPosition.Y;
+            }
+
 
             edge.Left.X = Canvas.GetLeft(edge.Left.Graphic) + deltaX;
             edge.Left.Y = Canvas.GetTop(edge.Left.Graphic) + deltaY;
@@ -65,6 +89,30 @@ namespace PolygonEditor
             edge.Graphic.Y1 = center1.Y;
             edge.Graphic.X2 = center2.X;
             edge.Graphic.Y2 = center2.Y;
+
+            if(edge.Icon is not null && edge.Constraint != Constraint.None)
+            {
+                if(edge.Constraint == Constraint.Parallel)
+                {
+                    Canvas.SetLeft(edge.Icon, (center1.X + center2.X) / 2 - edge.Icon.Width / 2);
+                    Canvas.SetTop(edge.Icon, center1.Y);
+                }
+                else if(edge.Constraint == Constraint.Perpendicular)
+                {
+                    Canvas.SetLeft(edge.Icon, center1.X);
+                    Canvas.SetTop(edge.Icon, (center1.Y + center2.Y) / 2 - edge.Icon.Width / 2);
+                }
+            }
+        }
+
+        public static (System.Windows.Point, System.Windows.Point) getEndpoints(Edge edge)
+        {
+            var left = edge.Left ?? throw new Exception("ConstraintException: left end is null");
+            var right = edge.Right ?? throw new Exception("ConstraintException: left end is null");
+            if (left.Graphic is null || right.Graphic is null) throw new Exception("SplitException: graphics are null");
+            System.Windows.Point leftCenter = new(Canvas.GetLeft(left.Graphic) + left.Graphic.Width / 2, Canvas.GetTop(left.Graphic) + left.Graphic.Height / 2);
+            System.Windows.Point rightCenter = new(Canvas.GetLeft(right.Graphic) + right.Graphic.Width / 2, Canvas.GetTop(right.Graphic) + right.Graphic.Height / 2);
+            return (leftCenter, rightCenter);
 
         }
     }
