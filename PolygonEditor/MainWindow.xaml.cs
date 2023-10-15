@@ -351,6 +351,7 @@ namespace PolygonEditor
 
             var left = edgeForVertexAddition.Left ?? throw new Exception("SplitException: left end is null");
             var right = edgeForVertexAddition.Right ?? throw new Exception("SplitException: right end is null");
+            if (left.Graphic is null || right.Graphic is null) throw new Exception("SplitException: graphics are null");
             System.Windows.Point leftCenter = new(Canvas.GetLeft(left.Graphic) + left.Graphic.Width / 2, Canvas.GetTop(left.Graphic) + left.Graphic.Height / 2);
             System.Windows.Point rightCenter = new(Canvas.GetLeft(right.Graphic) + right.Graphic.Width / 2, Canvas.GetTop(right.Graphic) + right.Graphic.Height / 2);
 
@@ -360,17 +361,21 @@ namespace PolygonEditor
                 Graphic = initPointGraphic(),
                 X = (leftCenter.X + rightCenter.X)/2,
                 Y = (leftCenter.Y + rightCenter.Y) / 2,
-                PolygonIndex = edgeForVertexAddition.PolygonIndex
+                PolygonIndex = edgeForVertexAddition.PolygonIndex,
+                Left = left,
+                Right = right,
             };
             DrawPoint(vertex);
+            polygons[vertex.PolygonIndex].Vertices.Add(vertex);
 
             var leftEdge = new Edge
             {
                 Graphic = initEdgeGraphic(edgeForVertexAddition.Left, vertex),
                 Left = edgeForVertexAddition.Left,
                 Right = vertex,
-                PolygonIndex = edgeForVertexAddition.PolygonIndex
+                PolygonIndex = edgeForVertexAddition.PolygonIndex,
             };
+            DrawEdge(leftEdge);
 
             var rightEdge = new Edge
             {
@@ -379,8 +384,16 @@ namespace PolygonEditor
                 Right = edgeForVertexAddition.Right,
                 PolygonIndex = edgeForVertexAddition.PolygonIndex
             };
-            DrawEdge(leftEdge);
             DrawEdge(rightEdge);
+
+            left.Right = vertex;
+            right.Left = vertex;
+
+            left.RightEdge = leftEdge;
+            right.LeftEdge = rightEdge;
+
+            vertex.LeftEdge = leftEdge;
+            vertex.RightEdge = rightEdge;
         }
     }
 }
