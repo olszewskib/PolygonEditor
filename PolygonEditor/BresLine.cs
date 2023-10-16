@@ -51,7 +51,7 @@ namespace PolygonEditor
         protected override void OnRender(DrawingContext drawingContext)
         {
             base.OnRender(drawingContext);
-            if (isBresengam)
+            if (!isBresengam)
             {
                 Pen line = new Pen(lineColor, 2);
                 drawingContext.DrawLine(line,new System.Windows.Point(X1,Y1), new System.Windows.Point(X2,Y2));

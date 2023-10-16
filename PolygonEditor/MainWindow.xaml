@@ -21,13 +21,19 @@
             <MenuItem Header="Perpendicular constarint" Click="MenuItem_Click_PerpendicularConstraint"/>
         </ContextMenu>
     </Window.Resources>
-    <Canvas Name="mainCanvas" 
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <CheckBox x:Name="isBresenhamCheckBox" Content="Bresenham algorithm"/>
+        <Canvas Name="mainCanvas" 
+            Grid.Row="1"
             MouseDown="mainCanvas_MouseDown"
             MouseMove="mainCanvas_MouseMove"
             MouseUp="mainCanvas_MouseUp"
             IsEnabled="True" 
             Focusable="True" 
-            Background="AliceBlue">
-        <local:BresLine/>
-    </Canvas>
+            Background="AliceBlue"/>
+    </Grid>
 </Window>

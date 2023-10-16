@@ -76,6 +76,8 @@ namespace PolygonEditor
             Point center1 = new(Canvas.GetLeft(v1.Graphic) + v1.Graphic.Width / 2, Canvas.GetTop(v1.Graphic) + v1.Graphic.Height / 2);
             Point center2 = new(Canvas.GetLeft(v2.Graphic) + v2.Graphic.Width / 2, Canvas.GetTop(v2.Graphic) + v2.Graphic.Height / 2);
 
+            var isChecked = isBresenhamCheckBox.IsChecked ?? throw new Exception("CheckboxException: NotFound somehow");
+
             BresLine edge = new()
             {
                 X1 = center1.X,
@@ -83,6 +85,7 @@ namespace PolygonEditor
                 X2 = center2.X,
                 Y2 = center2.Y,
                 LineColor = Brushes.Black,
+                IsBresenham = isChecked,
             };
 
             edge.MouseEnter += Edge_MouseEnter;
@@ -98,6 +101,8 @@ namespace PolygonEditor
         private bool isParallelValid()
         {
             if (menuEdge is null) throw new Exception("isParallelValidException");
+            if (menuEdge.Right is null || menuEdge.Right.RightEdge is null) throw new Exception("isParallelValidException");
+            if (menuEdge.Left is null || menuEdge.Left.LeftEdge is null) throw new Exception("isParallelValidException");
             if (menuEdge.Right.RightEdge.Constraint == Constraint.Parallel) return false;
             if (menuEdge.Left.LeftEdge.Constraint == Constraint.Parallel) return false;
             if (menuEdge.Constraint == Constraint.Perpendicular) return false;
@@ -106,6 +111,8 @@ namespace PolygonEditor
         private bool isPerpendicularValid()
         {
             if (menuEdge is null) throw new Exception("isPerpendicularValidException");
+            if (menuEdge.Right is null || menuEdge.Right.RightEdge is null) throw new Exception("isPerpendicularValidException");
+            if (menuEdge.Left is null || menuEdge.Left.LeftEdge is null) throw new Exception("isPerpendicularValidException");
             if (menuEdge.Right.RightEdge.Constraint == Constraint.Perpendicular) return false;
             if (menuEdge.Left.LeftEdge.Constraint == Constraint.Perpendicular) return false;
             if (menuEdge.Constraint == Constraint.Parallel) return false;

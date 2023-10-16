@@ -39,6 +39,7 @@ namespace PolygonEditor
             double deltaX = 0;
             double deltaY = 0;
 
+            if (vertex.LeftEdge is null || vertex.RightEdge is null) throw new Exception("DragVertexException: neighbour edges are null");
             if (vertex.LeftEdge.Constraint == Constraint.None && vertex.RightEdge.Constraint == Constraint.None)
             {
                 deltaX = newPosition.X - lastPosition.X;
