@@ -12,8 +12,21 @@ namespace PolygonEditor
 {
     internal class BresLine : UIElement
     {
-        public Point Start {  get; set; }
-        public Point End {  get; set; }
+        public double X1 { get; set; }
+        public double Y1 { get; set; }
+        public double X2 { get; set; }
+        public double Y2 { get; set; }
+
+        private bool isBresengam = false;
+        public bool IsBresenham
+        {
+            get { return isBresengam; }
+            set
+            {
+                isBresengam = value;
+                this.Redraw();
+            }
+        }
 
         private Brush lineColor = Brushes.Red;
         public Brush LineColor
@@ -22,7 +35,7 @@ namespace PolygonEditor
             set
             {
                 lineColor = value;
-                this.InvalidateVisual();
+                this.Redraw();
             }
         }
         public BresLine()
@@ -30,44 +43,54 @@ namespace PolygonEditor
             
         }
 
+        public void Redraw()
+        {
+            this.InvalidateVisual();
+        }
+
         protected override void OnRender(DrawingContext drawingContext)
         {
             base.OnRender(drawingContext);
-            //Pen pen = new Pen(lineColor, 2);
-            //drawingContext.DrawLine(pen, Start, End);
-            Pen pen = new Pen(lineColor, 2);
-            int x1 = (int)Start.X;
-            int y1 = (int)Start.Y;
-            int x2 = (int)End.X;
-            int y2 = (int)End.Y;
-
-            int dx = Math.Abs(x2 - x1);
-            int dy = Math.Abs(y2 - y1);
-            int sx = x1 < x2 ? 1 : -1;
-            int sy = y1 < y2 ? 1 : -1;
-            int err = dx - dy;
-
-            while (true)
+            if (isBresengam)
             {
-                drawingContext.DrawRectangle(pen.Brush, pen, new Rect(x1, y1, 1, 1));
+                Pen line = new Pen(lineColor, 2);
+                drawingContext.DrawLine(line,new System.Windows.Point(X1,Y1), new System.Windows.Point(X2,Y2));
+            }
+            else
+            {
+                Pen pen = new Pen(lineColor, 2);
+                int x1 = (int)X1;
+                int y1 = (int)Y1;
+                int x2 = (int)X2;
+                int y2 = (int)Y2;
 
-                if (x1 == x2 && y1 == y2)
-                    break;
+                int dx = Math.Abs(x2 - x1);
+                int dy = Math.Abs(y2 - y1);
+                int sx = x1 < x2 ? 1 : -1;
+                int sy = y1 < y2 ? 1 : -1;
+                int err = dx - dy;
 
-                int e2 = 2 * err;
-                if (e2 > -dy)
+                while (true)
                 {
-                    err -= dy;
-                    x1 += sx;
-                }
+                    drawingContext.DrawRectangle(pen.Brush, pen, new Rect(x1, y1, 1, 1));
 
-                if (e2 < dx)
-                {
-                    err += dx;
-                    y1 += sy;
+                    if (x1 == x2 && y1 == y2)
+                        break;
+
+                    int e2 = 2 * err;
+                    if (e2 > -dy)
+                    {
+                        err -= dy;
+                        x1 += sx;
+                    }
+
+                    if (e2 < dx)
+                    {
+                        err += dx;
+                        y1 += sy;
+                    }
                 }
             }
         }
-
     }
 }

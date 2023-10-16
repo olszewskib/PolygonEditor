@@ -21,10 +21,10 @@ namespace PolygonEditor
         public int PolygonIndex { get; set; }
         public Vertex? Left { get; set; }
         public Vertex? Right { get; set; }
-        public Line? Graphic { get; set; }
+        public BresLine? Graphic { get; set; }
         public Image? Icon { get; set; }
         public Constraint Constraint { get; set; } = Constraint.None;
-        public static Edge? FindEdge(Line line, List<Polygon> polygons)
+        public static Edge? FindEdge(BresLine line, List<Polygon> polygons)
         {
             foreach(var polygon in polygons)
             {
@@ -89,6 +89,8 @@ namespace PolygonEditor
             edge.Graphic.Y1 = center1.Y;
             edge.Graphic.X2 = center2.X;
             edge.Graphic.Y2 = center2.Y;
+
+            edge.Graphic.Redraw();
 
             if(edge.Icon is not null && edge.Constraint != Constraint.None)
             {

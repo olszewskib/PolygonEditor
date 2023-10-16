@@ -69,21 +69,20 @@ namespace PolygonEditor
 
             return point;
         }
-        private Line initEdgeGraphic(Vertex v1, Vertex v2)
+        private BresLine initEdgeGraphic(Vertex v1, Vertex v2)
         {
             if (v1.Graphic is null || v2.Graphic is null) throw new Exception("initEdgeGraphicException");
 
             Point center1 = new(Canvas.GetLeft(v1.Graphic) + v1.Graphic.Width / 2, Canvas.GetTop(v1.Graphic) + v1.Graphic.Height / 2);
             Point center2 = new(Canvas.GetLeft(v2.Graphic) + v2.Graphic.Width / 2, Canvas.GetTop(v2.Graphic) + v2.Graphic.Height / 2);
 
-            Line edge = new()
+            BresLine edge = new()
             {
                 X1 = center1.X,
                 Y1 = center1.Y,
                 X2 = center2.X,
                 Y2 = center2.Y,
-                Stroke = Brushes.Black,
-                StrokeThickness = 2
+                LineColor = Brushes.Black,
             };
 
             edge.MouseEnter += Edge_MouseEnter;
@@ -233,28 +232,23 @@ namespace PolygonEditor
         private void Edge_MouseEnter(object sender, MouseEventArgs e)
         {
             isDragging = false;
-            if (sender is Line hoverLine)
+            if (sender is BresLine hoverLine)
             {
-                hoverLine.Stroke = Brushes.Green;
-            }
-            if(sender is BresLine line)
-            {
-                line.LineColor = Brushes.Green;
-
+                hoverLine.LineColor = Brushes.Green;
             }
         }
         private void Edge_MouseLeave(object sender, MouseEventArgs e)
         {
-            if (sender is Line hoverLine)
+            if (sender is BresLine hoverLine)
             {
-                hoverLine.Stroke = Brushes.Black;
+                hoverLine.LineColor = Brushes.Black;
             }
         }
         private void Edge_MouseMove(object sender, MouseEventArgs e)
         {
             if (!isDragging) return;
 
-            if (sender is Line draggedLine)
+            if (sender is BresLine draggedLine)
             {
                 var draggedEdge = Edge.FindEdge(draggedLine,polygons) ?? throw new Exception("Dragged edge not found somehow");
 
@@ -268,7 +262,7 @@ namespace PolygonEditor
         }
         private void Edge_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if(e.OriginalSource is Line line)
+            if(e.OriginalSource is BresLine line)
             {
                 var edge = Edge.FindEdge(line, polygons) ?? throw new Exception("Edge_MouseDownException: edge not foune");
 
@@ -294,7 +288,7 @@ namespace PolygonEditor
         }
         private void Edge_MouseUp(object sender, MouseEventArgs e)
         {
-            if (sender is Line hoverLine)
+            if (sender is BresLine hoverLine)
             {
                 hoverLine.ReleaseMouseCapture();
                 isDragging = false;
@@ -305,11 +299,6 @@ namespace PolygonEditor
         // Canvas events
         private void mainCanvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            var test = new BresLine();
-            test.Start = (new System.Windows.Point(0, 0));
-            test.Start = (new System.Windows.Point(100, 200));
-            test.MouseEnter += Edge_MouseEnter;
-            mainCanvas.Children.Add(test);
 
             // coordinates of a mouse click
             (var X, var Y) = GetMousePosition();
@@ -330,7 +319,7 @@ namespace PolygonEditor
             }
 
             // Check if the click is on the exisitng object
-            if (e.OriginalSource is Line || e.OriginalSource is Ellipse) return;
+            if (e.OriginalSource is Ellipse || e.OriginalSource is BresLine) return;
 
 
             // vertex init
