@@ -55,11 +55,11 @@ namespace PolygonEditor
             right.X += deltaX;
             right.Y += deltaY;
 
-            ConnectVertex(edge, edge.Left, edge.Right);
-            ConnectVertex(edge.Left.LeftEdge, edge.Left.Left, edge.Left);
-            ConnectVertex(edge.Right.RightEdge, edge.Right, edge.Right.Right);
+            redrawEdge(edge, edge.Left, edge.Right);
+            redrawEdge(edge.Left.LeftEdge, edge.Left.Left, edge.Left);
+            redrawEdge(edge.Right.RightEdge, edge.Right, edge.Right.Right);
         }
-        public static void ConnectVertex(Edge edge, Vertex v1, Vertex v2)
+        public static void redrawEdge(Edge edge, Vertex v1, Vertex v2)
         {
             if (v1.Graphic is null || v2.Graphic is null) throw new Exception("RedrawEdgeException: vertex.Graphic is null");
 

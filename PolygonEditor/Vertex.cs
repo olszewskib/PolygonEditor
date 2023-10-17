@@ -26,7 +26,7 @@ namespace PolygonEditor
             get => Canvas.GetTop(this.Graphic);
             set => Canvas.SetTop(this.Graphic, value);
         }
-        public System.Windows.Point Center => new System.Windows.Point(X + Radius/2, Y + Radius/2);
+        public System.Windows.Point Center => new(X + Radius / 2, Y + Radius / 2);
         public Vertex? Right { get; set; }
         public Edge? RightEdge {  get; set; }
         public Vertex? Left { get; set; }
