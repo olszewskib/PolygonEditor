@@ -40,11 +40,8 @@ namespace PolygonEditor
         public static void DragEdge(Edge edge, System.Windows.Point newPosition, System.Windows.Point lastPosition)
         {
             if (edge.Left is null || edge.Right is null) throw new Exception("DragEdgeException: end vertices are null");
-            if(edge.Left.Left is null || edge.Right.Right is null) throw new Exception("DragEdgeException: neighbour vertices are null");
-            if(edge.Left.LeftEdge is null || edge.Right.RightEdge is null) throw new Exception("DragEdgeException: neighbour edges are null");
 
             (var left, var right) = (edge.Left, edge.Right);
-
             var deltaX = newPosition.X - lastPosition.X;
             var deltaY = newPosition.Y - lastPosition.Y;
 
