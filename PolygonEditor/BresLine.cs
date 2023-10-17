@@ -53,8 +53,8 @@ namespace PolygonEditor
             base.OnRender(drawingContext);
             if (!isBresengam)
             {
-                Pen line = new Pen(lineColor, 2);
-                drawingContext.DrawLine(line,new System.Windows.Point(X1,Y1), new System.Windows.Point(X2,Y2));
+                Pen line = new Pen(lineColor, Edge.Width);
+                drawingContext.DrawLine(line,new Point(X1,Y1), new Point(X2,Y2));
             }
             else
             {

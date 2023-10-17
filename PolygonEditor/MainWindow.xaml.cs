@@ -33,7 +33,7 @@ namespace PolygonEditor
         private Vertex? menuVertex;
         private Edge? menuEdge;
 
-        //
+        // Moving a polygon
         private Polygon? polygonToMove;
 
         public MainWindow()
@@ -54,9 +54,9 @@ namespace PolygonEditor
         {
             Ellipse point = new()
             {
-                Width = Vertex.VertexRadius,
-                Height = Vertex.VertexRadius,
-                StrokeThickness = 4,
+                Width = Vertex.Radius,
+                Height = Vertex.Radius,
+                StrokeThickness = Vertex.StrokeThickness,
                 Stroke = Brushes.Blue
             };
 
@@ -308,14 +308,14 @@ namespace PolygonEditor
         {
 
             // coordinates of a mouse click
-            (var X, var Y) = GetMousePosition();
+            (var x, var y) = GetMousePosition();
 
             // Later this will give options to clear canvas ect
             if (e.ChangedButton == MouseButton.Right)
             {
                 if (e.OriginalSource is Canvas canvas)
                 {
-                    polygonToMove = Polygon.FindPolygon(new System.Windows.Point(X, Y), polygons);
+                    polygonToMove = Polygon.FindPolygon(new System.Windows.Point(x, y), polygons);
                     if (polygonToMove is null) return;
 
                     canvas.CaptureMouse();
@@ -333,8 +333,6 @@ namespace PolygonEditor
             var vertex = new Vertex
             {
                 Graphic = initPointGraphic(),
-                X = X - (Vertex.VertexRadius / 2),
-                Y = Y - (Vertex.VertexRadius / 2),
             };
 
             // init for forming a polygon 
@@ -345,7 +343,7 @@ namespace PolygonEditor
             }
             vertex.PolygonIndex = Polygon.Id;
 
-            DrawPoint(vertex);
+            DrawPoint(vertex,x,y);
 
             // drawing an edge
             if (polygons[Polygon.Id].Vertices.Count != 0)
@@ -380,9 +378,8 @@ namespace PolygonEditor
                 double deltaY = newPosition.Y - lastPosition.Y;
                 foreach(var vertex in polygonToMove.Vertices)
                 {
-                    var X = Canvas.GetLeft(vertex.Graphic);
-                    var Y = Canvas.GetTop(vertex.Graphic);
-
+                    var X = vertex.X;
+                    var Y = vertex.Y;
                     Vertex.DragVertex(vertex, new System.Windows.Point(X + deltaX, Y + deltaY), new System.Windows.Point(X, Y));
                 }
 
@@ -401,10 +398,10 @@ namespace PolygonEditor
         }
         
         // Drawing Functions
-        private void DrawPoint(Vertex v)
+        private void DrawPoint(Vertex v, double x, double y)
         {
-            Canvas.SetLeft(v.Graphic, v.X-(Vertex.VertexRadius /2));
-            Canvas.SetTop(v.Graphic, v.Y-(Vertex.VertexRadius /2));
+            v.X = x - (Vertex.Radius / 2);
+            v.Y = y - (Vertex.Radius / 2);
 
             mainCanvas.Children.Add(v.Graphic);
         }
@@ -429,7 +426,6 @@ namespace PolygonEditor
             if (menuVertex.RightEdge.Icon is Image rightIcon) mainCanvas.Children.Remove(rightIcon);
 
             Vertex.RemoveVertex(menuVertex, polygons);
-            // add missing edge!
 
             if (menuVertex.Left is null || menuVertex.Right is null) throw new Exception("VertexRemovalException: null neighbours");
             var edge = new Edge
@@ -455,19 +451,21 @@ namespace PolygonEditor
 
             var left = menuEdge.Left ?? throw new Exception("SplitException: left end is null");
             var right = menuEdge.Right ?? throw new Exception("SplitException: right end is null");
-            (var leftCenter, var rightCenter) = Edge.getEndpoints(menuEdge);
+            var leftCenter = left.Center;
+            var rightCenter = right.Center;
 
             // vertex init
+            var x = (leftCenter.X + rightCenter.X) / 2;
+            var y = (leftCenter.Y + rightCenter.Y) / 2;
+            
             var vertex = new Vertex
             {
                 Graphic = initPointGraphic(),
-                X = (leftCenter.X + rightCenter.X)/2,
-                Y = (leftCenter.Y + rightCenter.Y) / 2,
                 PolygonIndex = menuEdge.PolygonIndex,
                 Left = left,
                 Right = right,
             };
-            DrawPoint(vertex);
+            DrawPoint(vertex,x,y);
             polygons[vertex.PolygonIndex].Vertices.Add(vertex);
 
             var leftEdge = new Edge
@@ -514,7 +512,8 @@ namespace PolygonEditor
 
             var left = menuEdge.Left ?? throw new Exception("ConstraintException: left end is null");
             var right = menuEdge.Right ?? throw new Exception("ConstraintException: left end is null");
-            (var leftCenter, var rightCenter) = Edge.getEndpoints(menuEdge);
+            var leftCenter = left.Center;
+            var rightCenter = right.Center;
 
             var vertexToMove = leftCenter.Y <= rightCenter.Y ? (left,leftCenter) : (right,rightCenter);
             var delta = Math.Abs(leftCenter.Y - rightCenter.Y);
@@ -558,7 +557,8 @@ namespace PolygonEditor
 
             var left = menuEdge.Left ?? throw new Exception("ConstraintException: left end is null");
             var right = menuEdge.Right ?? throw new Exception("ConstraintException: left end is null");
-            (var leftCenter, var rightCenter) = Edge.getEndpoints(menuEdge);
+            var leftCenter = left.Center;
+            var rightCenter = right.Center;
 
             var vertexToMove = leftCenter.X <= rightCenter.X ? (left,leftCenter) : (right,rightCenter);
             var delta = Math.Abs(leftCenter.X - rightCenter.X);
