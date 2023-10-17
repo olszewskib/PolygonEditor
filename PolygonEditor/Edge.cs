@@ -13,7 +13,8 @@ namespace PolygonEditor
     {
         None,
         Parallel,
-        Perpendicular
+        Perpendicular,
+        All
     }
 
     internal class Edge
@@ -47,47 +48,8 @@ namespace PolygonEditor
             var deltaX = newPosition.X - lastPosition.X;
             var deltaY = newPosition.Y - lastPosition.Y;
 
-            // moving left vertex
-            left.X += deltaX;
-            left.Y += deltaY;
-
-            // moving right vertex
-            right.X += deltaX;
-            right.Y += deltaY;
-
-            redrawEdge(edge, edge.Left, edge.Right);
-            redrawEdge(edge.Left.LeftEdge, edge.Left.Left, edge.Left);
-            redrawEdge(edge.Right.RightEdge, edge.Right, edge.Right.Right);
-        }
-        public static void redrawEdge(Edge edge, Vertex v1, Vertex v2)
-        {
-            if (v1.Graphic is null || v2.Graphic is null) throw new Exception("RedrawEdgeException: vertex.Graphic is null");
-
-            var center1 = v1.Center;
-            var center2 = v2.Center;
-
-            if (edge.Graphic == null) throw new Exception("RedrawEdgeException: edgeGraphic is null");
-
-            edge.Graphic.X1 = center1.X;
-            edge.Graphic.Y1 = center1.Y;
-            edge.Graphic.X2 = center2.X;
-            edge.Graphic.Y2 = center2.Y;
-
-            edge.Graphic.Redraw();
-
-            if(edge.Icon is not null && edge.Constraint != Constraint.None)
-            {
-                if(edge.Constraint == Constraint.Parallel)
-                {
-                    Canvas.SetLeft(edge.Icon, (center1.X + center2.X) / 2 - edge.Icon.Width / 2);
-                    Canvas.SetTop(edge.Icon, center1.Y);
-                }
-                else if(edge.Constraint == Constraint.Perpendicular)
-                {
-                    Canvas.SetLeft(edge.Icon, center1.X);
-                    Canvas.SetTop(edge.Icon, (center1.Y + center2.Y) / 2 - edge.Icon.Width / 2);
-                }
-            }
+            Vertex.DragVertex(left, new System.Windows.Point(left.X + deltaX,left.Y + deltaY), new System.Windows.Point(left.X, left.Y), edge.Constraint);
+            Vertex.DragVertex(right, new System.Windows.Point(right.X + deltaX,right.Y + deltaY), new System.Windows.Point(right.X, right.Y),edge.Constraint);
         }
     }
 }

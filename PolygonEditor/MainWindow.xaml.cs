@@ -380,7 +380,7 @@ namespace PolygonEditor
                 {
                     var X = vertex.X;
                     var Y = vertex.Y;
-                    Vertex.DragVertex(vertex, new System.Windows.Point(X + deltaX, Y + deltaY), new System.Windows.Point(X, Y));
+                    Vertex.DragVertex(vertex, new Point(X + deltaX, Y + deltaY), new System.Windows.Point(X, Y), Constraint.All);
                 }
 
                 lastPosition = newPosition;
@@ -534,11 +534,6 @@ namespace PolygonEditor
             Canvas.SetTop(icon, newPosition.Y);
             mainCanvas.Children.Add(icon);
             menuEdge.Icon = icon;
-
-            //if(e.OriginalSource is MenuItem item)
-            //{
-            //    item.IsChecked = true;
-            //}
         }
         private void MenuItem_Click_PerpendicularConstraint(object sender, RoutedEventArgs e)
         {
