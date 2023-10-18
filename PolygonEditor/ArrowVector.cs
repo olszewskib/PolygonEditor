@@ -37,41 +37,21 @@ namespace PolygonEditor
             this.StartPoint = StartPoint.Center;
             this.EndPoint = EndPoint.Center;
         }
-        public Point RightPoint(double d)
-        {
-            var len = Length;
-            var v1 = ((End/len)*d,(-Start/len)*d);
-            var v2 = ((-End/len)*d,(Start/len)*d);
 
-            var v1End = new Point(MiddlePoint.X + v1.Item1, MiddlePoint.Y + v1.Item2);
-            var v2End = new Point(MiddlePoint.X + v2.Item1, MiddlePoint.Y + v2.Item2);
-
-            return RetrunRightTurn(v1End, v2End);
-        }
-
-        public Point RetrunRightTurn(Point p1, Point p2)
+        public int RetrunRightTurn()
         {
             var quadrant = checkVectorOrientation(this);
 
-            if (quadrant == Quadrant.I)
+            if (quadrant == Quadrant.I || quadrant == Quadrant.IV)
             {
-                return (p1.X < p2.X) ? p1 : p2;
+                return 1;
             }
-            if (quadrant == Quadrant.II)
+            if (quadrant == Quadrant.II || quadrant == Quadrant.III)
             {
-                return (p1.X < p2.X) ? p1 : p2;
-            }
-            if (quadrant == Quadrant.III)
-            {
-                return (p1.X > p2.X) ? p1 : p2;
-            }
-            if (quadrant == Quadrant.IV)
-            {
-                return (p1.X > p2.X) ? p1 : p2;
+                return -1;
             }
 
-            return p1;
-
+            return 1;
         }
 
         public static Quadrant checkVectorOrientation(ArrowVector vector)

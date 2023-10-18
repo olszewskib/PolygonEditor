@@ -584,23 +584,70 @@ namespace PolygonEditor
         private void MenuItem_Click_AddOffset(object sender, RoutedEventArgs e)
         {
 
-            double offset = 30;
+            var polygon = polygons[menuVertex.PolygonIndex];
+            double offset = 40;
 
             var start = menuVertex;
             var end = start.Right;
             var vector = new ArrowVector(start, end);
-            var point = vector.RightPoint(offset);
+            var sgn = vector.RetrunRightTurn();
 
+            var a = (end.Y - start.Y) / (end.X - start.X);
+            var b = start.Y - (start.X * a);
+            start.RightEdge.A = a;
+            start.RightEdge.B = b;
+            start.RightEdge.OffsetB = b + (sgn) * (offset * Math.Sqrt(1 + Math.Pow(a, 2)));
 
-            // vertex init
-            var x = point.X;
-            var y = point.Y;
-            
-            var vertex = new Vertex
+            start = start.Right;
+
+            while(start != menuVertex)
             {
-                Graphic = initPointGraphic(),
-            };
-            DrawPoint(vertex,x,y);
+                end = start.Right;
+                vector = new ArrowVector(start, end);
+                sgn = vector.RetrunRightTurn();
+
+                a = (end.Y - start.Y) / (end.X - start.X);
+                b = start.Y - (start.X * a);
+                start.RightEdge.A = a;
+                start.RightEdge.B = b;
+                start.RightEdge.OffsetB = b + (sgn) * (offset * Math.Sqrt(1 + Math.Pow(a, 2)));
+
+                start = start.Right;
+
+            }
+
+            bool init = true;
+            foreach(var edge in polygons[menuVertex.PolygonIndex].Edges)
+            {
+                var x = (edge.Right.RightEdge.OffsetB - edge.OffsetB) / (edge.A - edge.Right.RightEdge.A);
+                var y = x * edge.A + edge.OffsetB;
+                var vertex = new Vertex
+                {
+                    Graphic = initPointGraphic()
+                };
+                DrawPoint(vertex,x,y);
+                if (init)
+                {
+                    polygon.OffsetPolygon = new Polygon(vertex, vertex);
+                    init = false;
+                }
+                polygon.OffsetPolygon.AddVertex(vertex);
+            }
+            polygon.OffsetPolygon.LastVertex.Right = polygon.OffsetPolygon.FirstVertex;
+
+            foreach (var vertex in polygon.OffsetPolygon.Vertices)
+            {
+                var edge = new Edge
+                {
+                    Graphic = initEdgeGraphic(vertex, vertex.Right),
+                    Left = vertex,
+                    Right = vertex.Right,
+                    PolygonIndex = menuVertex.PolygonIndex,
+                };
+                DrawEdge(edge);
+            }
+
+            return;
 
         }
     }

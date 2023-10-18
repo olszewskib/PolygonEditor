@@ -19,6 +19,11 @@ namespace PolygonEditor
 
     internal class Edge
     {
+        // offset
+        public double A;
+        public double B;
+        public double OffsetB;
+
         public static int Width = 3;
         public int PolygonIndex { get; set; }
         public Vertex? Left { get; set; }
