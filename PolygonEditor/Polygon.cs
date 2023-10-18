@@ -9,6 +9,8 @@ namespace PolygonEditor
     internal class Polygon
     {
         public static int Id = -1;
+
+        public Polygon? OffsetPolygon;
         public Vertex FirstVertex {  get; set; }
         public Vertex LastVertex { get; set; }
 

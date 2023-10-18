@@ -177,6 +177,11 @@ namespace PolygonEditor
 
                 Point newPosition = e.GetPosition(mainCanvas);
                 Vertex.DragVertex(draggedVertex, newPosition, lastPosition);
+                var test = new ArrowVector(draggedVertex.Left,draggedVertex);
+                Debug.Print($"[{(int)draggedVertex.X},{(int)draggedVertex.Y}]");
+                Debug.Print($"Vector: [{(int)test.Start},{(int)test.End}]");
+                Debug.Print($"Quadrant: {ArrowVector.checkVectorOrientation(test)}");
+
 
                 lastPosition = newPosition;
             }
@@ -574,6 +579,29 @@ namespace PolygonEditor
             Canvas.SetTop(icon, ((leftCenter.Y + rightCenter.Y) / 2) - iconSize/2);
             mainCanvas.Children.Add(icon);
             menuEdge.Icon = icon;
+        }
+
+        private void MenuItem_Click_AddOffset(object sender, RoutedEventArgs e)
+        {
+
+            double offset = 30;
+
+            var start = menuVertex;
+            var end = start.Right;
+            var vector = new ArrowVector(start, end);
+            var point = vector.RightPoint(offset);
+
+
+            // vertex init
+            var x = point.X;
+            var y = point.Y;
+            
+            var vertex = new Vertex
+            {
+                Graphic = initPointGraphic(),
+            };
+            DrawPoint(vertex,x,y);
+
         }
     }
 }

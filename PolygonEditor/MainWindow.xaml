@@ -9,6 +9,7 @@
     <Window.Resources>
         <ContextMenu x:Key="VertexMenu">
             <MenuItem Header="Remove Vertex" Click="MenuItem_Click_RemoveVertex"/>
+            <MenuItem Header="Add offset" Click="MenuItem_Click_AddOffset"/>
         </ContextMenu>
         <ContextMenu x:Key="EdgeMenu">
             <MenuItem Name="SplitEdge"
