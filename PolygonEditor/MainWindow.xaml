@@ -27,9 +27,17 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="20"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+            
         <CheckBox x:Name="isBresenhamCheckBox" Content="Bresenham algorithm"/>
+        <Slider x:Name="offsetSlider" Minimum="20" Maximum="100" Grid.Column="2" ValueChanged="offsetSlider_ValueChanged"/>
         <Canvas Name="mainCanvas" 
             Grid.Row="1"
+            Grid.ColumnSpan="3"
             MouseDown="mainCanvas_MouseDown"
             MouseMove="mainCanvas_MouseMove"
             MouseUp="mainCanvas_MouseUp"

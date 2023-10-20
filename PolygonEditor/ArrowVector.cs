@@ -23,9 +23,7 @@ namespace PolygonEditor
         public Point MiddlePoint => new((StartPoint.X + EndPoint.X) / 2, (StartPoint.Y + EndPoint.Y) / 2);
         public double Start => EndPoint.X - StartPoint.X;
         public double End => EndPoint.Y - StartPoint.Y;
-
         public double Length => Math.Sqrt(Math.Pow(Start,2) + Math.Pow(End,2));
-
 
         public ArrowVector(Point StartPoint, Point EndPoint)
         {
@@ -51,6 +49,7 @@ namespace PolygonEditor
                 return -1;
             }
 
+            // add axis support
             return 1;
         }
 
@@ -69,9 +68,9 @@ namespace PolygonEditor
             return Quadrant.Axis;
         }
 
-        public static double VectorProduct(ArrowVector v1, ArrowVector v2)
+        public static double VectorProduct(Point p1, Point p2)
         {
-            return v1.Start * v2.Start - v1.End * v2.End;
+            return p1.X * p2.Y - p2.X * p1.Y;
         }
     }
 }

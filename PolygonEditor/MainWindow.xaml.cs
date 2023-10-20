@@ -24,6 +24,7 @@ namespace PolygonEditor
         private bool isDragging = false;
         private Point lastPosition;
         private int iconSize = 20;
+        double offset = 40;
 
         // variables that make sense
         private bool isPolygonForming = false;
@@ -178,11 +179,17 @@ namespace PolygonEditor
                 Point newPosition = e.GetPosition(mainCanvas);
                 Vertex.DragVertex(draggedVertex, newPosition, lastPosition);
                 var test = new ArrowVector(draggedVertex.Left,draggedVertex);
-                Debug.Print($"[{(int)draggedVertex.X},{(int)draggedVertex.Y}]");
-                Debug.Print($"Vector: [{(int)test.Start},{(int)test.End}]");
-                Debug.Print($"Quadrant: {ArrowVector.checkVectorOrientation(test)}");
 
-
+                var polygon = polygons[draggedVertex.PolygonIndex].OffsetPolygon;
+                foreach(var edge in polygon.Edges)
+                {
+                    mainCanvas.Children.Remove(edge.Graphic);
+                }
+                foreach(var point in polygon.Vertices)
+                {
+                    mainCanvas.Children.Remove(point.Graphic);
+                }
+                MenuItem_Click_AddOffset(sender, e);
                 lastPosition = newPosition;
             }
 
@@ -585,7 +592,6 @@ namespace PolygonEditor
         {
 
             var polygon = polygons[menuVertex.PolygonIndex];
-            double offset = 40;
 
             var start = menuVertex;
             var end = start.Right;
@@ -629,6 +635,7 @@ namespace PolygonEditor
                 if (init)
                 {
                     polygon.OffsetPolygon = new Polygon(vertex, vertex);
+                    Polygon.Id--;
                     init = false;
                 }
                 polygon.OffsetPolygon.AddVertex(vertex);
@@ -644,10 +651,29 @@ namespace PolygonEditor
                     Right = vertex.Right,
                     PolygonIndex = menuVertex.PolygonIndex,
                 };
-                DrawEdge(edge);
+                polygon.OffsetPolygon.AddEdge(edge);
+                mainCanvas.Children.Add(edge.Graphic);
             }
 
             return;
+
+        }
+
+        private void offsetSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            // need to add a way to bind it to the polygone    
+            if (polygons.Count == 0) return;
+            offset = e.NewValue;
+            var polygon = polygons[0].OffsetPolygon;
+            foreach(var edge in polygon.Edges)
+            {
+                mainCanvas.Children.Remove(edge.Graphic);
+            }
+            foreach(var point in polygon.Vertices)
+            {
+                mainCanvas.Children.Remove(point.Graphic);
+            }
+            MenuItem_Click_AddOffset(sender, e);
 
         }
     }

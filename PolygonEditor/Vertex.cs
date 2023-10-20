@@ -136,8 +136,6 @@ namespace PolygonEditor
             if (vertex.LeftEdge is null || vertex.RightEdge is null) throw new Exception("RemoveVertexException: null edges");
             polygon.Edges.Remove(vertex.LeftEdge);
             polygon.Edges.Remove(vertex.RightEdge);
-
-            //Todo do i still need to null pointer for edges and vertex ? 
         }
     }
 }

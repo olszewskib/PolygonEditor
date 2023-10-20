@@ -54,5 +54,30 @@ namespace PolygonEditor
 
             return null;
         }
+        public void SetOffestForEdges(double offset)
+        {
+            var start = FirstVertex;
+            var end = start.Right ?? throw new Exception("OffsetException");
+            var vector = new ArrowVector(start, end);
+            var sgn = vector.RetrunRightTurn();
+
+            var edge = start.RightEdge ?? throw new Exception("OffestExcetpion");
+            edge.FindOffset(offset,sgn);
+
+            start = start.Right;
+
+            while(start != FirstVertex)
+            {
+                end = start.Right ?? throw new Exception("OffsetException");
+                vector = new ArrowVector(start, end);
+                sgn = vector.RetrunRightTurn();
+
+                edge = start.RightEdge ?? throw new Exception("OffestExcetpion");
+                edge.FindOffset(offset,sgn);
+
+                start = start.Right;
+            }
+
+        }
     }
 }
