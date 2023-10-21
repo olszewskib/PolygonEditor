@@ -21,9 +21,9 @@ namespace PolygonEditor
     /// </summary>
     public partial class MainWindow : Window
     {
+        private readonly int iconSize = 20;
         private bool isDragging = false;
         private Point lastPosition;
-        private int iconSize = 20;
         double offset = 40;
 
         // variables that make sense
@@ -99,6 +99,7 @@ namespace PolygonEditor
             return edge;
         }
 
+        // Context menu initialization
         private bool isParallelValid()
         {
             if (menuEdge is null) throw new Exception("isParallelValidException");
@@ -146,7 +147,7 @@ namespace PolygonEditor
 
         // Point events
         private void Point_MouseEnter(object sender, MouseEventArgs e)
-        {
+        { 
             isDragging = false;
             if (sender is Ellipse hoverPoint)
             {
@@ -170,6 +171,7 @@ namespace PolygonEditor
         }
         private void Point_MouseMove(object sender, MouseEventArgs e)
         {
+            if (isPolygonForming) return;
             if (!isDragging) return;
 
             if (sender is Ellipse draggedPoint)
@@ -180,16 +182,21 @@ namespace PolygonEditor
                 Vertex.DragVertex(draggedVertex, newPosition, lastPosition);
                 var test = new ArrowVector(draggedVertex.Left,draggedVertex);
 
+                // offset polygon 
                 var polygon = polygons[draggedVertex.PolygonIndex].OffsetPolygon;
-                foreach(var edge in polygon.Edges)
+                if (polygon is not null)
                 {
-                    mainCanvas.Children.Remove(edge.Graphic);
+                    foreach(var edge in polygon.Edges)
+                    {
+                        mainCanvas.Children.Remove(edge.Graphic);
+                    }
+                    foreach(var point in polygon.Vertices)
+                    {
+                        mainCanvas.Children.Remove(point.Graphic);
+                    }
+                    MenuItem_Click_AddOffset(sender, e);
                 }
-                foreach(var point in polygon.Vertices)
-                {
-                    mainCanvas.Children.Remove(point.Graphic);
-                }
-                MenuItem_Click_AddOffset(sender, e);
+
                 lastPosition = newPosition;
             }
 
@@ -242,7 +249,6 @@ namespace PolygonEditor
                 existingVertex.Graphic.CaptureMouse();
                 isDragging = true;
                 lastPosition = e.GetPosition(mainCanvas);
-                return;
             }
 
         }
@@ -250,6 +256,7 @@ namespace PolygonEditor
         // Edges Events
         private void Edge_MouseEnter(object sender, MouseEventArgs e)
         {
+            if (isPolygonForming) return;
             isDragging = false;
             if (sender is BresLine hoverLine)
             {
@@ -258,6 +265,7 @@ namespace PolygonEditor
         }
         private void Edge_MouseLeave(object sender, MouseEventArgs e)
         {
+            if (isPolygonForming) return;
             if (sender is BresLine hoverLine)
             {
                 hoverLine.LineColor = Brushes.Black;
@@ -265,6 +273,7 @@ namespace PolygonEditor
         }
         private void Edge_MouseMove(object sender, MouseEventArgs e)
         {
+            if (isPolygonForming) return;
             if (!isDragging) return;
 
             if (sender is BresLine draggedLine)
@@ -281,6 +290,7 @@ namespace PolygonEditor
         }
         private void Edge_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            if (isPolygonForming) return;
             if(e.OriginalSource is BresLine line)
             {
                 var edge = Edge.FindEdge(line, polygons) ?? throw new Exception("Edge_MouseDownException: edge not foune");
@@ -307,6 +317,7 @@ namespace PolygonEditor
         }
         private void Edge_MouseUp(object sender, MouseEventArgs e)
         {
+            if (isPolygonForming) return;
             if (sender is BresLine hoverLine)
             {
                 hoverLine.ReleaseMouseCapture();
@@ -587,7 +598,6 @@ namespace PolygonEditor
             mainCanvas.Children.Add(icon);
             menuEdge.Icon = icon;
         }
-
         private void MenuItem_Click_AddOffset(object sender, RoutedEventArgs e)
         {
 
@@ -658,7 +668,6 @@ namespace PolygonEditor
             return;
 
         }
-
         private void offsetSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             // need to add a way to bind it to the polygone    
