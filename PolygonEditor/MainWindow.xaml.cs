@@ -41,6 +41,7 @@ namespace PolygonEditor
         public MainWindow()
         {
             InitializeComponent();
+            polygonOneInit();
         }
         
         // General functions
@@ -49,6 +50,67 @@ namespace PolygonEditor
             var X = Mouse.GetPosition(mainCanvas).X;
             var Y = Mouse.GetPosition(mainCanvas).Y;
             return (X, Y);
+        }
+
+        // Pre defined polygons
+        private void polygonOneInit()
+        {
+            var polygon = initPolygon(334, 666);
+            addPointToPolygon(454,573, polygon);
+            addPointToPolygon(321,486, polygon);
+            addPointToPolygon(540,396, polygon);
+            addPointToPolygon(521,727, polygon);
+            closePolygon(polygon);
+        }
+        private void closePolygon(Polygon polygon)
+        {
+            var firstVertex = polygon.FirstVertex;
+            var lastVertex = polygon.LastVertex;
+            var edge = new Edge
+            {
+                Graphic = initEdgeGraphic(lastVertex, firstVertex),
+                Left = lastVertex,
+                Right = firstVertex,
+                PolygonIndex = lastVertex.PolygonIndex
+            };
+
+            firstVertex.LeftEdge = edge;
+            firstVertex.Left = lastVertex;
+            lastVertex.Right = firstVertex;
+            DrawEdge(edge);
+
+        }
+        private Polygon initPolygon(double x, double y)
+        {
+            var vertex = new Vertex { Graphic = initPointGraphic() };
+            polygons.Add(new Polygon(vertex,vertex));
+            vertex.PolygonIndex = Polygon.Id;
+            DrawPoint(vertex, x, y);
+            var polygon = polygons[Polygon.Id];
+            polygon.AddVertex(vertex);
+            return polygon;
+
+        }
+        private void addPointToPolygon(double x, double y, Polygon polygon)
+        {
+            var vertex = new Vertex 
+            { 
+                Graphic = initPointGraphic(),
+                PolygonIndex = Polygon.Id
+            };
+            DrawPoint(vertex,x,y);
+
+            var lastVertex = polygon.LastVertex;
+            var edge = new Edge
+            {
+                Graphic = initEdgeGraphic(lastVertex,vertex),
+                Left = lastVertex,
+                Right = vertex,
+                PolygonIndex = vertex.PolygonIndex
+            };
+            DrawEdge(edge);
+
+            polygon.AddVertex(vertex);
         }
 
         // Graphic initialization
@@ -339,6 +401,7 @@ namespace PolygonEditor
         {
             // coordinates of a mouse click
             (var x, var y) = GetMousePosition();
+            Debug.Print($"[{x},{y}]");
 
             // moving a polygon
             if (e.ChangedButton == MouseButton.Right)
@@ -450,7 +513,7 @@ namespace PolygonEditor
             {
                 canvas.ReleaseMouseCapture();
                 isDragging = false;
-            }
+            } 
         }
         
         // Drawing Functions
