@@ -21,22 +21,22 @@ namespace PolygonEditor
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly int iconSize = 20;
-        private bool isDragging = false;
-        private Point lastPosition;
-        double offset = 40;
-        private BresLine? ray = null;
-
-        // variables that make sense
-        private bool isPolygonForming = false;
         private List<Polygon> polygons = new();
+        private bool isPolygonForming = false;
 
-        // Variables for menu events
+        // Variables for menuEvents
+        private Polygon? polygonToMove;
         private Vertex? menuVertex;
         private Edge? menuEdge;
 
-        // Moving a polygon
-        private Polygon? polygonToMove;
+        // Variables for mouseMoveEvents
+        private bool isDragging = false;
+        private BresLine? ray = null;
+        private Point lastPosition;
+
+        // Constants
+        private readonly int iconSize = 20;
+        double offset = 40;
 
         public MainWindow()
         {
@@ -68,15 +68,14 @@ namespace PolygonEditor
             point.MouseMove += Point_MouseMove;
             point.MouseDown += Point_MouseDown;
 
-
             return point;
         }
         private BresLine initEdgeGraphic(Vertex v1, Vertex v2)
         {
             if (v1.Graphic is null || v2.Graphic is null) throw new Exception("initEdgeGraphicException");
 
-            Point center1 = new(Canvas.GetLeft(v1.Graphic) + v1.Graphic.Width / 2, Canvas.GetTop(v1.Graphic) + v1.Graphic.Height / 2);
-            Point center2 = new(Canvas.GetLeft(v2.Graphic) + v2.Graphic.Width / 2, Canvas.GetTop(v2.Graphic) + v2.Graphic.Height / 2);
+            Point center1 = v1.Center;
+            Point center2 = v2.Center;
 
             var isChecked = isBresenhamCheckBox.IsChecked ?? throw new Exception("CheckboxException: NotFound somehow");
 
@@ -95,7 +94,6 @@ namespace PolygonEditor
             edge.MouseMove += Edge_MouseMove;
             edge.MouseDown += Edge_MouseDown;
             edge.MouseUp += Edge_MouseUp;
-            
 
             return edge;
         }
@@ -181,7 +179,6 @@ namespace PolygonEditor
 
                 Point newPosition = e.GetPosition(mainCanvas);
                 Vertex.DragVertex(draggedVertex, newPosition, lastPosition);
-                var test = new ArrowVector(draggedVertex.Left,draggedVertex);
 
                 // offset polygon 
                 var polygon = polygons[draggedVertex.PolygonIndex].OffsetPolygon;
@@ -200,7 +197,6 @@ namespace PolygonEditor
 
                 lastPosition = newPosition;
             }
-
         }
         private void Point_MouseDown(object sender, MouseButtonEventArgs e)
         {
@@ -208,26 +204,16 @@ namespace PolygonEditor
             {
                 var existingVertex = Vertex.FindVertex(ellipse, polygons) ?? throw new Exception("Clicked vertex somehow not found");
 
-                // menu options for a vertex
-                if (e.ChangedButton == MouseButton.Right && !isPolygonForming)
-                {
-                    //Todo add a warning that a polygon is forming if clicked
-                    var contextMenu = FindResource("VertexMenu") as ContextMenu;
-                    if(contextMenu is not null)
-                    {
-                        menuVertex = existingVertex;
-                        contextMenu.PlacementTarget = ellipse;
-                        contextMenu.IsOpen = true;
-                    }
-                    return;
-                }
-                
+                // closing a polygon
                 if (isPolygonForming)
                 {
-                    var firstVertex = polygons[existingVertex.PolygonIndex].FirstVertex;
+                    var polygon = polygons[existingVertex.PolygonIndex];
+                    if (polygon.Vertices.Count < 3) return;
+
+                    var firstVertex = polygon.FirstVertex;
                     if(existingVertex == firstVertex)
                     {
-                        var lastVertex = polygons[existingVertex.PolygonIndex].LastVertex;
+                        var lastVertex = polygon.LastVertex;
                         var edge = new Edge
                         {
                             Graphic = initEdgeGraphic(lastVertex, firstVertex),
@@ -248,15 +234,27 @@ namespace PolygonEditor
                         isPolygonForming = false;
                     }
                     return;
-
                 }
 
+                // constext menu for a vertex, accessible if polygon is not forming
+                if (e.ChangedButton == MouseButton.Right)
+                {
+                    var contextMenu = FindResource("VertexMenu") as ContextMenu;
+                    if(contextMenu is not null)
+                    {
+                        menuVertex = existingVertex;
+                        contextMenu.PlacementTarget = ellipse;
+                        contextMenu.IsOpen = true;
+                    }
+                    return;
+                }
+
+                // moving an existing vertex, accessible if polygon is not forming
                 if (existingVertex.Graphic is null) throw new Exception("MouseDownException: existingVertex.Graphic is null");
                 existingVertex.Graphic.CaptureMouse();
                 isDragging = true;
                 lastPosition = e.GetPosition(mainCanvas);
             }
-
         }
 
         // Edges Events
@@ -292,23 +290,23 @@ namespace PolygonEditor
 
                 lastPosition = newPosition;
             }
-
         }
         private void Edge_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            // needed when user clicks on a ray when forming a polygon
             if (isPolygonForming)
             {
                 mainCanvas_MouseDown(sender, e);
                 return;
             }
+
             if(e.OriginalSource is BresLine line)
             {
                 var edge = Edge.FindEdge(line, polygons) ?? throw new Exception("Edge_MouseDownException: edge not foune");
 
-                // menu option for edge
+                // menu option for edge, accessible if polygon is not forming
                 if (e.ChangedButton == MouseButton.Right && !isPolygonForming)
                 {
-                    //Todo add a warning that a polygon is forming if clicked
                     menuEdge = edge;
                     var contextMenu = initContextMenu();
                     if(contextMenu is not null)
@@ -319,6 +317,7 @@ namespace PolygonEditor
                     return;
                 }
 
+                // moving an exisitng edge, accessible if polygon is not forming
                 if (edge.Graphic is null) throw new Exception("Edge_MouseDownException: edge.Graphic is null somehow");
                 edge.Graphic.CaptureMouse();
                 isDragging = true;
@@ -333,17 +332,15 @@ namespace PolygonEditor
                 hoverLine.ReleaseMouseCapture();
                 isDragging = false;
             }
-
         }
         
         // Canvas events
         private void mainCanvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
-
             // coordinates of a mouse click
             (var x, var y) = GetMousePosition();
 
-            // Later this will give options to clear canvas ect
+            // moving a polygon
             if (e.ChangedButton == MouseButton.Right)
             {
                 if (e.OriginalSource is Canvas canvas)
@@ -362,10 +359,7 @@ namespace PolygonEditor
             if (e.OriginalSource is Ellipse || (e.OriginalSource is BresLine && e.Source != ray)) return;
 
             // vertex init
-            var vertex = new Vertex
-            {
-                Graphic = initPointGraphic(),
-            };
+            var vertex = new Vertex { Graphic = initPointGraphic() };
 
             // init for forming a polygon 
             if(!isPolygonForming)
@@ -388,11 +382,10 @@ namespace PolygonEditor
                     Right = vertex,
                     PolygonIndex = vertex.PolygonIndex
                 };
-
                 DrawEdge(edge);
             }
 
-            // drawing a point
+            // adding a point to polygon
             polygons[Polygon.Id].AddVertex(vertex);
         }
         private void mainCanvas_MouseMove(object sender, MouseEventArgs e)
@@ -416,8 +409,8 @@ namespace PolygonEditor
                         IsBresenham = isChecked,
                     };
                     edge.MouseDown += Edge_MouseDown;
-                    ray = edge;
                     mainCanvas.Children.Add(edge);
+                    ray = edge;
                     return;
                 }
 
@@ -438,7 +431,7 @@ namespace PolygonEditor
 
                 Point newPosition = e.GetPosition(mainCanvas);
 
-                // move
+                // moving polygon
                 double deltaX = newPosition.X - lastPosition.X;
                 double deltaY = newPosition.Y - lastPosition.Y;
                 foreach(var vertex in polygonToMove.Vertices)
@@ -449,7 +442,6 @@ namespace PolygonEditor
                 }
 
                 lastPosition = newPosition;
-
             }
         }
         private void mainCanvas_MouseUp(object sender, MouseButtonEventArgs e)
@@ -459,7 +451,6 @@ namespace PolygonEditor
                 canvas.ReleaseMouseCapture();
                 isDragging = false;
             }
-
         }
         
         // Drawing Functions
