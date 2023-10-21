@@ -25,6 +25,7 @@ namespace PolygonEditor
         private bool isDragging = false;
         private Point lastPosition;
         double offset = 40;
+        private BresLine? ray = null;
 
         // variables that make sense
         private bool isPolygonForming = false;
@@ -238,6 +239,11 @@ namespace PolygonEditor
                         firstVertex.LeftEdge = edge;
                         firstVertex.Left = lastVertex;
                         lastVertex.Right = firstVertex;
+                        if (ray is not null)
+                        {
+                            mainCanvas.Children.Remove(ray);
+                            ray = null;
+                        }
                         DrawEdge(edge);
                         isPolygonForming = false;
                     }
@@ -290,7 +296,11 @@ namespace PolygonEditor
         }
         private void Edge_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (isPolygonForming) return;
+            if (isPolygonForming)
+            {
+                mainCanvas_MouseDown(sender, e);
+                return;
+            }
             if(e.OriginalSource is BresLine line)
             {
                 var edge = Edge.FindEdge(line, polygons) ?? throw new Exception("Edge_MouseDownException: edge not foune");
@@ -349,8 +359,7 @@ namespace PolygonEditor
             }
 
             // Check if the click is on the exisitng object
-            if (e.OriginalSource is Ellipse || e.OriginalSource is BresLine) return;
-
+            if (e.OriginalSource is Ellipse || (e.OriginalSource is BresLine && e.Source != ray)) return;
 
             // vertex init
             var vertex = new Vertex
@@ -388,6 +397,39 @@ namespace PolygonEditor
         }
         private void mainCanvas_MouseMove(object sender, MouseEventArgs e)
         {
+            if (isPolygonForming)
+            {
+                Point newPosition = e.GetPosition(mainCanvas);
+
+                var lastVertex = polygons[Polygon.Id].LastVertex;
+                var isChecked = isBresenhamCheckBox.IsChecked ?? throw new Exception("CheckboxException: NotFound somehow");
+
+                if (ray is null)
+                {
+                    BresLine edge = new()
+                    {
+                        X1 = lastVertex.X + (Vertex.Radius /2),
+                        Y1 = lastVertex.Y + (Vertex.Radius /2),
+                        X2 = newPosition.X + (Vertex.Radius / 2),
+                        Y2 = newPosition.Y + (Vertex.Radius / 2),
+                        LineColor = Brushes.Black,
+                        IsBresenham = isChecked,
+                    };
+                    edge.MouseDown += Edge_MouseDown;
+                    ray = edge;
+                    mainCanvas.Children.Add(edge);
+                    return;
+                }
+
+                ray.X1 = lastVertex.X + (Vertex.Radius / 2);
+                ray.Y1 = lastVertex.Y + (Vertex.Radius / 2);
+                ray.X2 = newPosition.X + (Vertex.Radius / 2);
+                ray.Y2 = newPosition.Y + (Vertex.Radius / 2);
+                ray.Redraw();
+
+                lastPosition = newPosition;
+            }
+
             if (!isDragging) return;
 
             if (sender is Canvas canvas)
