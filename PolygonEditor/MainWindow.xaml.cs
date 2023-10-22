@@ -16,9 +16,6 @@ using System.Windows.Shapes;
 
 namespace PolygonEditor
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         private List<Polygon> polygons = new();
@@ -52,7 +49,7 @@ namespace PolygonEditor
             return (X, Y);
         }
 
-        // Pre defined polygons
+        // Pre Defined Polygon
         private void polygonOneInit()
         {
             var polygon = initPolygon(334, 666);
@@ -62,24 +59,8 @@ namespace PolygonEditor
             addPointToPolygon(521,727, polygon);
             closePolygon(polygon);
         }
-        private void closePolygon(Polygon polygon)
-        {
-            var firstVertex = polygon.FirstVertex;
-            var lastVertex = polygon.LastVertex;
-            var edge = new Edge
-            {
-                Graphic = initEdgeGraphic(lastVertex, firstVertex),
-                Left = lastVertex,
-                Right = firstVertex,
-                PolygonIndex = lastVertex.PolygonIndex
-            };
 
-            firstVertex.LeftEdge = edge;
-            firstVertex.Left = lastVertex;
-            lastVertex.Right = firstVertex;
-            DrawEdge(edge);
-
-        }
+        // Constructing a polygons
         private Polygon initPolygon(double x, double y)
         {
             var vertex = new Vertex { Graphic = initPointGraphic() };
@@ -111,6 +92,29 @@ namespace PolygonEditor
             DrawEdge(edge);
 
             polygon.AddVertex(vertex);
+        }
+        private void closePolygon(Polygon polygon)
+        {
+            var firstVertex = polygon.FirstVertex;
+            var lastVertex = polygon.LastVertex;
+            var edge = new Edge
+            {
+                Graphic = initEdgeGraphic(lastVertex, firstVertex),
+                Left = lastVertex,
+                Right = firstVertex,
+                PolygonIndex = lastVertex.PolygonIndex
+            };
+
+            firstVertex.LeftEdge = edge;
+            firstVertex.Left = lastVertex;
+            lastVertex.Right = firstVertex;
+            if (ray is not null)
+            {
+                mainCanvas.Children.Remove(ray);
+                ray = null;
+            }
+            DrawEdge(edge);
+
         }
 
         // Graphic initialization
@@ -275,24 +279,7 @@ namespace PolygonEditor
                     var firstVertex = polygon.FirstVertex;
                     if(existingVertex == firstVertex)
                     {
-                        var lastVertex = polygon.LastVertex;
-                        var edge = new Edge
-                        {
-                            Graphic = initEdgeGraphic(lastVertex, firstVertex),
-                            Left = lastVertex,
-                            Right = firstVertex,
-                            PolygonIndex = lastVertex.PolygonIndex
-                        };
-
-                        firstVertex.LeftEdge = edge;
-                        firstVertex.Left = lastVertex;
-                        lastVertex.Right = firstVertex;
-                        if (ray is not null)
-                        {
-                            mainCanvas.Children.Remove(ray);
-                            ray = null;
-                        }
-                        DrawEdge(edge);
+                        closePolygon(polygon);
                         isPolygonForming = false;
                     }
                     return;
@@ -401,7 +388,6 @@ namespace PolygonEditor
         {
             // coordinates of a mouse click
             (var x, var y) = GetMousePosition();
-            Debug.Print($"[{x},{y}]");
 
             // moving a polygon
             if (e.ChangedButton == MouseButton.Right)
@@ -421,35 +407,18 @@ namespace PolygonEditor
             // Check if the click is on the exisitng object
             if (e.OriginalSource is Ellipse || (e.OriginalSource is BresLine && e.Source != ray)) return;
 
-            // vertex init
-            var vertex = new Vertex { Graphic = initPointGraphic() };
-
-            // init for forming a polygon 
+            // init for polygon 
             if(!isPolygonForming)
             {
-                polygons.Add(new Polygon(vertex,vertex));
+                initPolygon(x,y);
                 isPolygonForming= true;
-            }
-            vertex.PolygonIndex = Polygon.Id;
-
-            DrawPoint(vertex,x,y);
-
-            // drawing an edge
-            if (polygons[Polygon.Id].Vertices.Count != 0)
-            {
-                var lastVertex = polygons[Polygon.Id].LastVertex;
-                var edge = new Edge
-                {
-                    Graphic = initEdgeGraphic(lastVertex,vertex),
-                    Left = lastVertex,
-                    Right = vertex,
-                    PolygonIndex = vertex.PolygonIndex
-                };
-                DrawEdge(edge);
+                return;
             }
 
-            // adding a point to polygon
-            polygons[Polygon.Id].AddVertex(vertex);
+            // adding point and edge to polygon
+            var polygon = polygons[Polygon.Id];
+            addPointToPolygon(x, y, polygon);
+
         }
         private void mainCanvas_MouseMove(object sender, MouseEventArgs e)
         {
