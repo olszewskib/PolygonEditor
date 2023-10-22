@@ -123,7 +123,7 @@ namespace PolygonEditor
         }
 
         // Graphic initialization
-        private Ellipse initPointGraphic()
+        private Ellipse initPointGraphic(bool noEvents = false)
         {
             Ellipse point = new()
             {
@@ -133,6 +133,7 @@ namespace PolygonEditor
                 Stroke = Brushes.Blue
             };
 
+            if (noEvents) return point;
             point.MouseEnter += Point_MouseEnter;
             point.MouseLeave += Point_MouseLeave;
             point.MouseUp += Point_MouseUp;
@@ -258,6 +259,7 @@ namespace PolygonEditor
                     foreach(var edge in polygon.Edges)
                     {
                         mainCanvas.Children.Remove(edge.Graphic);
+                        if (edge.Mark is not null) mainCanvas.Children.Remove(edge.Mark.Graphic);
                     }
                     foreach(var point in polygon.Vertices)
                     {
@@ -673,72 +675,148 @@ namespace PolygonEditor
         private void MenuItem_Click_AddOffset(object sender, RoutedEventArgs e)
         {
 
+            if (menuVertex is null) throw new Exception();
             var polygon = polygons[menuVertex.PolygonIndex];
+            polygon.SetOffestForEdges(offset);
 
-            var start = menuVertex;
-            var end = start.Right;
-            var vector = new ArrowVector(start, end);
-            var sgn = vector.RetrunRightTurn();
-
-            var a = (end.Y - start.Y) / (end.X - start.X);
-            var b = start.Y - (start.X * a);
-            start.RightEdge.A = a;
-            start.RightEdge.B = b;
-            start.RightEdge.OffsetB = b + (sgn) * (offset * Math.Sqrt(1 + Math.Pow(a, 2)));
-
-            start = start.Right;
-
-            while(start != menuVertex)
-            {
-                end = start.Right;
-                vector = new ArrowVector(start, end);
-                sgn = vector.RetrunRightTurn();
-
-                a = (end.Y - start.Y) / (end.X - start.X);
-                b = start.Y - (start.X * a);
-                start.RightEdge.A = a;
-                start.RightEdge.B = b;
-                start.RightEdge.OffsetB = b + (sgn) * (offset * Math.Sqrt(1 + Math.Pow(a, 2)));
-
-                start = start.Right;
-
-            }
 
             bool init = true;
-            foreach(var edge in polygons[menuVertex.PolygonIndex].Edges)
+            foreach(var edge in polygon.Edges)
             {
-                var x = (edge.Right.RightEdge.OffsetB - edge.OffsetB) / (edge.A - edge.Right.RightEdge.A);
-                var y = x * edge.A + edge.OffsetB;
-                var vertex = new Vertex
-                {
-                    Graphic = initPointGraphic()
-                };
+                if (edge.Right is null || edge.Right.RightEdge is null) throw new Exception();
+                (var x, var y) = Edge.OffsetIntersectionCoords(edge.Right.RightEdge, edge);
+
+                var vertex = new Vertex { Graphic = initPointGraphic(true) };
                 DrawPoint(vertex,x,y);
+
                 if (init)
                 {
                     polygon.OffsetPolygon = new Polygon(vertex, vertex);
                     Polygon.Id--;
                     init = false;
+                    polygon.OffsetPolygon!.AddVertex(vertex);
+                    continue;
                 }
-                polygon.OffsetPolygon.AddVertex(vertex);
-            }
-            polygon.OffsetPolygon.LastVertex.Right = polygon.OffsetPolygon.FirstVertex;
 
-            foreach (var vertex in polygon.OffsetPolygon.Vertices)
-            {
-                var edge = new Edge
+                var lastVertex = polygon.OffsetPolygon!.LastVertex;
+                var offsetEdge = new Edge
                 {
-                    Graphic = initEdgeGraphic(vertex, vertex.Right),
-                    Left = vertex,
-                    Right = vertex.Right,
-                    PolygonIndex = menuVertex.PolygonIndex,
+                    Graphic = initEdgeGraphic(lastVertex, vertex),
+                    Left = lastVertex,
+                    Right = vertex,
+                    PolygonIndex = menuVertex.PolygonIndex, // to do remove this menu vertex
+                    A = edge.A,
+                    B = edge.OffsetB
                 };
-                polygon.OffsetPolygon.AddEdge(edge);
-                mainCanvas.Children.Add(edge.Graphic);
+                polygon.OffsetPolygon.AddEdge(offsetEdge);
+                mainCanvas.Children.Add(offsetEdge.Graphic);
+
+                polygon.OffsetPolygon!.AddVertex(vertex);
+            }
+            polygon.OffsetPolygon!.LastVertex.Right = polygon.OffsetPolygon.FirstVertex;
+
+            var LastVertex = polygon.OffsetPolygon!.LastVertex;
+            var FirstVertex = polygon.OffsetPolygon!.FirstVertex;
+            var E = polygon.FirstVertex.RightEdge;
+            var OffsetEdge = new Edge
+            {
+                Graphic = initEdgeGraphic(LastVertex, FirstVertex),
+                Left = LastVertex,
+                Right = FirstVertex,
+                PolygonIndex = menuVertex.PolygonIndex, // to do remove this menu vertex
+                A = E.A,
+                B = E.OffsetB
+            };
+            polygon.OffsetPolygon.Edges.Insert(0,OffsetEdge);
+            mainCanvas.Children.Add(OffsetEdge.Graphic);
+            LastVertex.RightEdge = OffsetEdge;
+            FirstVertex.LeftEdge = OffsetEdge;
+
+
+            // w tej pętli mamy odnalezione przecięcia otoczki
+            var markedEdges = new List<Edge>();
+            var markedVertices = new List<Vertex>();
+            foreach(var offsetEdge in polygon.OffsetPolygon.Edges)
+            {
+                var result = Edge.Intersecting(offsetEdge, polygon.OffsetPolygon);
+                if (result is null) continue;
+
+                // if crossing already exist
+                var crossingEdge = result.Value.edge;
+                if(crossingEdge.Mark is not null)
+                {
+                    offsetEdge.Mark = crossingEdge.Mark;
+                    markedEdges.Add(offsetEdge);
+                    continue;
+                }
+
+                // crossing was not discovered yet
+                var vertex = new Vertex { Graphic = initPointGraphic(true) };
+                vertex.MarkedEdges = new List<Edge>();
+                vertex.Graphic.Stroke = Brushes.Red;
+                
+                DrawPoint(vertex, result.Value.point.X, result.Value.point.Y);
+                offsetEdge.Mark = vertex;
+
+                markedEdges.Add(offsetEdge);
+                markedVertices.Add(vertex);
+            }
+
+            foreach(var mark in markedEdges)
+            {
+                mainCanvas.Children.Remove(mark.Graphic);
+
+                var leftEdge = new Edge
+                {
+                    Graphic = initEdgeGraphic(mark.Left, mark.Mark),
+                    Left = mark.Left,
+                    Right = mark.Mark,
+                    PolygonIndex = mark.Left.PolygonIndex,
+                };
+                mainCanvas.Children.Add(leftEdge.Graphic);
+                polygon.OffsetPolygon.AddEdge(leftEdge);
+
+                var rightEdge = new Edge
+                {
+                    Graphic = initEdgeGraphic(mark.Mark,mark.Right),
+                    Left = mark.Mark,
+                    Right = mark.Right,
+                    PolygonIndex = mark.Right.PolygonIndex
+                };
+                mainCanvas.Children.Add(rightEdge.Graphic);
+                polygon.OffsetPolygon.AddEdge(rightEdge);
+
+                mark.Mark.MarkedEdges.Add(leftEdge);
+                mark.Mark.MarkedEdges.Add(rightEdge);
+
+            }
+
+
+            foreach(var markedVertex in markedVertices)
+            {
+                foreach(var segment in markedVertex.MarkedEdges)
+                {
+                    var left = segment.Left;
+                    var right = segment.Right;
+
+                    if(left != markedVertex && markedVertices.Contains(left.Left))
+                    {
+                        mainCanvas.Children.Remove(left.Graphic);
+                        mainCanvas.Children.Remove(left.RightEdge.Graphic);
+                        mainCanvas.Children.Remove(left.LeftEdge.Graphic);
+
+                    }
+                    if(right != markedVertex && markedVertices.Contains(right.Right))
+                    {
+                        mainCanvas.Children.Remove(right.Graphic);
+                        mainCanvas.Children.Remove(right.RightEdge.Graphic);
+                        mainCanvas.Children.Remove(right.LeftEdge.Graphic);
+
+                    }
+                }
             }
 
             return;
-
         }
         private void offsetSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {

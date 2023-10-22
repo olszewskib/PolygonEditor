@@ -31,6 +31,8 @@ namespace PolygonEditor.Models
         public Edge? RightEdge { get; set; }
         public Vertex? Left { get; set; }
         public Edge? LeftEdge { get; set; }
+
+        public List<Edge>? MarkedEdges { get; set; }
         public Ellipse? Graphic { get; set; }
         public static Vertex? FindVertex(Ellipse point, List<Polygon> polygons)
         {

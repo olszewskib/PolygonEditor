@@ -105,5 +105,15 @@ namespace PolygonEditor.Models
             }
             
         }
+
+        public bool isVertexToCloseToPolygon(Vertex v, double offset)
+        {
+            foreach(var edge in Edges)
+            {
+                var distance = Math.Abs(edge.A * v.X - v.Y + edge.B) / Math.Sqrt(Math.Pow(edge.A, 2) + 1);
+                //if (distance < offset) return true;
+            }
+            return false;
+        }
     }
 }
