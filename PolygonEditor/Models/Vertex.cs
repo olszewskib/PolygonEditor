@@ -9,34 +9,34 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-namespace PolygonEditor
+namespace PolygonEditor.Models
 {
     internal class Vertex
     {
         public static int Radius = 10;
         public static int StrokeThickness = 7;
-        public int PolygonIndex {  get; set; }
+        public int PolygonIndex { get; set; }
         public double X
         {
-            get => Canvas.GetLeft(this.Graphic);
-            set => Canvas.SetLeft(this.Graphic, value);
+            get => Canvas.GetLeft(Graphic);
+            set => Canvas.SetLeft(Graphic, value);
         }
         public double Y
         {
-            get => Canvas.GetTop(this.Graphic);
-            set => Canvas.SetTop(this.Graphic, value);
+            get => Canvas.GetTop(Graphic);
+            set => Canvas.SetTop(Graphic, value);
         }
         public System.Windows.Point Center => new(X + Radius / 2, Y + Radius / 2);
         public Vertex? Right { get; set; }
-        public Edge? RightEdge {  get; set; }
+        public Edge? RightEdge { get; set; }
         public Vertex? Left { get; set; }
-        public Edge? LeftEdge {  get; set; }
+        public Edge? LeftEdge { get; set; }
         public Ellipse? Graphic { get; set; }
         public static Vertex? FindVertex(Ellipse point, List<Polygon> polygons)
         {
-            foreach(var polygon in polygons)
+            foreach (var polygon in polygons)
             {
-                foreach(var vertex in polygon.Vertices)
+                foreach (var vertex in polygon.Vertices)
                 {
                     if (point == vertex.Graphic) return vertex;
                 }
@@ -56,9 +56,9 @@ namespace PolygonEditor
             if (vertex.Left is null || vertex.Right is null || vertex.Left.Left is null || vertex.Right.Right is null) throw new Exception("VertexDraggingException: null vertices or not a polygon");
             if (vertex.LeftEdge is null || vertex.RightEdge is null || vertex.Left.LeftEdge is null || vertex.Right.RightEdge is null) throw new Exception("VertexDraggingException: null edges");
 
-            if(skip != Constraint.All)
+            if (skip != Constraint.All)
             {
-                if(skip != Constraint.Parallel)
+                if (skip != Constraint.Parallel)
                 {
                     // Parallel Constraints
                     if (vertex.LeftEdge.Constraint == Constraint.Parallel)
@@ -73,15 +73,15 @@ namespace PolygonEditor
                     }
 
                 }
-                if(skip != Constraint.Perpendicular)
+                if (skip != Constraint.Perpendicular)
                 {
                     // Perpendicular Constraints
-                    if(vertex.LeftEdge.Constraint == Constraint.Perpendicular)
+                    if (vertex.LeftEdge.Constraint == Constraint.Perpendicular)
                     {
                         vertex.Left.X += deltaX;
                         ConnectVertex(vertex.Left.LeftEdge, vertex.Left.Left, vertex.Left);
                     }
-                    if(vertex.RightEdge.Constraint == Constraint.Perpendicular)
+                    if (vertex.RightEdge.Constraint == Constraint.Perpendicular)
                     {
                         vertex.Right.X += deltaX;
                         ConnectVertex(vertex.Right.RightEdge, vertex.Right, vertex.Right.Right);
@@ -107,14 +107,14 @@ namespace PolygonEditor
             edge.Graphic.Y2 = center2.Y;
             edge.Graphic.Redraw();
 
-            if(edge.Icon is not null && edge.Constraint != Constraint.None)
+            if (edge.Icon is not null && edge.Constraint != Constraint.None)
             {
-                if(edge.Constraint == Constraint.Parallel)
+                if (edge.Constraint == Constraint.Parallel)
                 {
                     Canvas.SetLeft(edge.Icon, (center1.X + center2.X) / 2 - edge.Icon.Width / 2);
                     Canvas.SetTop(edge.Icon, center1.Y);
                 }
-                else if(edge.Constraint == Constraint.Perpendicular)
+                else if (edge.Constraint == Constraint.Perpendicular)
                 {
                     Canvas.SetLeft(edge.Icon, center1.X);
                     Canvas.SetTop(edge.Icon, (center1.Y + center2.Y) / 2 - edge.Icon.Width / 2);

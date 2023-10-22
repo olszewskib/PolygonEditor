@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace PolygonEditor
+namespace PolygonEditor.Models
 {
     enum Quadrant
     {
@@ -23,7 +23,7 @@ namespace PolygonEditor
         public Point MiddlePoint => new((StartPoint.X + EndPoint.X) / 2, (StartPoint.Y + EndPoint.Y) / 2);
         public double Start => EndPoint.X - StartPoint.X;
         public double End => EndPoint.Y - StartPoint.Y;
-        public double Length => Math.Sqrt(Math.Pow(Start,2) + Math.Pow(End,2));
+        public double Length => Math.Sqrt(Math.Pow(Start, 2) + Math.Pow(End, 2));
 
         public ArrowVector(Point StartPoint, Point EndPoint)
         {

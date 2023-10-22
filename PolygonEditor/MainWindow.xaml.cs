@@ -13,6 +13,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using PolygonEditor.Models;
+
+using Polygon = PolygonEditor.Models.Polygon;
 
 namespace PolygonEditor
 {
@@ -115,6 +118,8 @@ namespace PolygonEditor
             }
             DrawEdge(edge);
 
+            // make it into a left turn
+            polygon.MakePolygonIntoALeftTurn();
         }
 
         // Graphic initialization
@@ -663,6 +668,8 @@ namespace PolygonEditor
             mainCanvas.Children.Add(icon);
             menuEdge.Icon = icon;
         }
+        
+        // offset
         private void MenuItem_Click_AddOffset(object sender, RoutedEventArgs e)
         {
 
@@ -735,6 +742,7 @@ namespace PolygonEditor
         }
         private void offsetSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            return;
             // need to add a way to bind it to the polygone    
             if (polygons.Count == 0) return;
             offset = e.NewValue;

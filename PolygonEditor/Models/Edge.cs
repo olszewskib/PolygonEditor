@@ -8,7 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Shapes;
 
-namespace PolygonEditor
+namespace PolygonEditor.Models
 {
     internal enum Constraint
     {
@@ -59,11 +59,11 @@ namespace PolygonEditor
         {
             if (Right is null || Left is null) throw new Exception("FindOffsetException");
             var a = (Right.Y - Left.Y) / (Right.X - Left.X);
-            var b = Left.Y - (Left.X * a);
+            var b = Left.Y - Left.X * a;
 
             A = a;
             B = b;
-            OffsetB = b + (sgn) * (offset * Math.Sqrt(1 + Math.Pow(a, 2)));
+            OffsetB = b + sgn * (offset * Math.Sqrt(1 + Math.Pow(a, 2)));
         }
 
         public static (System.Windows.Point point, Edge edge)? Intersecting(Edge edge, Polygon polygon)
@@ -102,25 +102,25 @@ namespace PolygonEditor
             var p13 = new System.Windows.Point(p3.X - p1.X, p3.Y - p1.Y);
             var p14 = new System.Windows.Point(p4.X - p1.X, p4.Y - p1.Y);
 
-            double d1 = ArrowVector.VectorProduct(p34 , p31 );
-            double d2 = ArrowVector.VectorProduct(p34 , p32 );
-            double d3 = ArrowVector.VectorProduct(p12 , p13 );
-            double d4 = ArrowVector.VectorProduct(p12 , p14 );
+            double d1 = ArrowVector.VectorProduct(p34, p31);
+            double d2 = ArrowVector.VectorProduct(p34, p32);
+            double d3 = ArrowVector.VectorProduct(p12, p13);
+            double d4 = ArrowVector.VectorProduct(p12, p14);
             double d12 = d1 * d2;
             double d34 = d3 * d4;
 
             if (d12 > 0 || d34 > 0) return false;
             if (d12 < 0 && d34 < 0) return true;
 
-            if ((p1.X == p3.X && p1.Y == p3.Y) || (p1.X == p4.X && p1.Y == p4.Y) || (p2.X == p3.X && p2.Y == p3.Y) || (p2.X == p4.X && p2.Y == p4.Y)) return false;
+            if (p1.X == p3.X && p1.Y == p3.Y || p1.X == p4.X && p1.Y == p4.Y || p2.X == p3.X && p2.Y == p3.Y || p2.X == p4.X && p2.Y == p4.Y) return false;
 
-            if(p1.X != p3.X)
+            if (p1.X != p3.X)
             {
-                return (Math.Max(p1.X, p2.X) > Math.Min(p3.X, p4.X)) && (Math.Max(p3.X, p4.X) > Math.Min(p1.X, p2.X));
+                return Math.Max(p1.X, p2.X) > Math.Min(p3.X, p4.X) && Math.Max(p3.X, p4.X) > Math.Min(p1.X, p2.X);
             }
             else
             {
-                return (Math.Max(p1.Y, p2.Y) > Math.Min(p3.Y, p4.Y)) && (Math.Max(p3.Y, p4.Y) > Math.Min(p1.Y, p2.Y));
+                return Math.Max(p1.Y, p2.Y) > Math.Min(p3.Y, p4.Y) && Math.Max(p3.Y, p4.Y) > Math.Min(p1.Y, p2.Y);
             }
         }
     }

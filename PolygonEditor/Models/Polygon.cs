@@ -4,14 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PolygonEditor
+namespace PolygonEditor.Models
 {
     internal class Polygon
     {
         public static int Id = -1;
 
         public Polygon? OffsetPolygon;
-        public Vertex FirstVertex {  get; set; }
+        public Vertex FirstVertex { get; set; }
         public Vertex LastVertex { get; set; }
 
         public List<Vertex> Vertices = new();
@@ -40,14 +40,14 @@ namespace PolygonEditor
         {
             // last vertex is changed after
             // needed for vertex removal
-            if(e.Left == LastVertex) LastVertex.RightEdge = e;
+            if (e.Left == LastVertex) LastVertex.RightEdge = e;
 
             // adding new edge
             Edges.Add(e);
         }
         public static Polygon? FindPolygon(System.Windows.Point point, List<Polygon> polygons)
         {
-            foreach(var polygon in polygons)
+            foreach (var polygon in polygons)
             {
                 if (RayCasting.isVertexInPolygon(point, polygon)) return polygon;
             }
@@ -62,22 +62,48 @@ namespace PolygonEditor
             var sgn = vector.RetrunRightTurn();
 
             var edge = start.RightEdge ?? throw new Exception("OffestExcetpion");
-            edge.FindOffset(offset,sgn);
+            edge.FindOffset(offset, sgn);
 
             start = start.Right;
 
-            while(start != FirstVertex)
+            while (start != FirstVertex)
             {
                 end = start.Right ?? throw new Exception("OffsetException");
                 vector = new ArrowVector(start, end);
                 sgn = vector.RetrunRightTurn();
 
                 edge = start.RightEdge ?? throw new Exception("OffestExcetpion");
-                edge.FindOffset(offset,sgn);
+                edge.FindOffset(offset, sgn);
 
                 start = start.Right;
             }
 
+        }
+        public void MakePolygonIntoALeftTurn()
+        {
+            var mostLeftVertex = FirstVertex;
+
+            foreach(var vertex in Vertices)
+            {
+                if(vertex.X < mostLeftVertex.X) mostLeftVertex = vertex;
+            }
+
+            // now we should have the furthest vertex to the left of all polygon
+            var lowerNeighbour = mostLeftVertex.Right.Y >= mostLeftVertex.Left.Y ? mostLeftVertex.RightEdge : mostLeftVertex.LeftEdge;
+
+            if (lowerNeighbour.Left == mostLeftVertex) return;
+
+            foreach(var vertex in Vertices)
+            {
+                (vertex.Left, vertex.Right) = (vertex.Right, vertex.Left);
+                (vertex.LeftEdge, vertex.RightEdge) = (vertex.RightEdge, vertex.LeftEdge);
+            }
+
+            foreach(var edge in Edges)
+            {
+                (edge.Left, edge.Right) = (edge.Right, edge.Left);
+            }
+            
         }
     }
 }
