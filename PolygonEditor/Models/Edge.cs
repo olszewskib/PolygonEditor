@@ -59,6 +59,40 @@ namespace PolygonEditor.Models
             Vertex.DragVertex(left, new Point(left.X + deltaX, left.Y + deltaY), new Point(left.X, left.Y), edge.Constraint);
             Vertex.DragVertex(right, new Point(right.X + deltaX, right.Y + deltaY), new Point(right.X, right.Y), edge.Constraint);
         }
+        
+        // hepers
+        public void AddMarkedVetex(Vertex vertex)
+        {
+            if(Mark is null)
+            {
+                Left.Right = vertex;
+                Right.Left = vertex;
+
+                vertex.Left = Left;
+                vertex.Right = Right;
+                return;
+            }
+
+            var v1 = new ArrowVector(Left.Center, vertex.Center);
+            var v2 = new ArrowVector(Left.Center, Mark.Center);
+
+            if(v1.Length > v2.Length)
+            {
+                Mark.Right = vertex;
+                Right.Left = vertex;
+
+                vertex.Left = Mark;
+                vertex.Right = Right;
+            }
+            else
+            {
+                Mark.Left = vertex;
+                Left.Right = vertex;
+
+                vertex.Right = Mark;
+                vertex.Left = Left;
+            }
+        }
 
         // constructin an offset
         public void FindOffset(double offset, int sgn)
@@ -71,35 +105,31 @@ namespace PolygonEditor.Models
             B = b;
             OffsetB = b + sgn * (offset * Math.Sqrt(1 + Math.Pow(a, 2)));
         }
-
         public static (double x, double y) OffsetIntersectionCoords(Edge e1, Edge e2)
         {
             var x = (e1.OffsetB - e2.OffsetB) / (e2.A - e1.A);
             var y = x * e2.A + e2.OffsetB;
             return (x, y);
         }
-
-        // fixing an offset
-        public static (Point point, Edge edge)? Intersecting(Edge edge, Polygon polygon)
+        public static Point IntersectionCoords(Edge e1, Edge e2)
         {
-            foreach (var e in polygon.Edges)
-            {
-                if (e == edge || !isIntersecting(e, edge)) continue;
-                var x = (e.B - edge.B) / (edge.A - e.A);
-                var y = x * edge.A + edge.B;
-
-                var p1 = e.Left;
-                var p2 = e.Right;
-
-                (var xMin, var xMax) = p1.X < p2.X ? (p1.X, p2.X) : (p2.X, p1.X);
-                (var yMin, var yMax) = p1.Y < p2.Y ? (p1.Y, p2.Y) : (p2.Y, p1.Y);
-
-                if (x < xMax && x > xMin && y < yMax && y > yMin) return (new Point(x, y), e);
-
-            }
-            return null;
+            var x = (e1.B - e2.B) / (e2.A - e1.A);
+            var y = x * e2.A + e2.B;
+            return new Point(x,y);
         }
 
+        // fixing an offset
+        public static List<(Edge,Edge)> Intersecting(Edge edge, Polygon polygon)
+        {
+            var points = new List<(Edge, Edge)>();
+
+            foreach (var e in polygon.Edges)
+            {
+                if (e == edge || !isIntersecting(edge, e)) continue;
+                points.Add((edge,e));
+            }
+            return points;
+        }
         private static bool isIntersecting(Edge edge1, Edge edge2)
         {
             var p1 = edge1.Left!.Center;

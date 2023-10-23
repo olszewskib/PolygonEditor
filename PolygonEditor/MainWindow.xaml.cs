@@ -710,7 +710,7 @@ namespace PolygonEditor
                     Graphic = initEdgeGraphic(lastVertex, vertex),
                     Left = lastVertex,
                     Right = vertex,
-                    PolygonIndex = polygon.PolygonId, // to do remove this menu vertex
+                    PolygonIndex = polygon.PolygonId,
                     A = edge.A,
                     B = edge.OffsetB
                 };
@@ -729,7 +729,7 @@ namespace PolygonEditor
                 Graphic = initEdgeGraphic(LastVertex, FirstVertex),
                 Left = LastVertex,
                 Right = FirstVertex,
-                PolygonIndex = polygon.PolygonId, // to do remove this menu vertex
+                PolygonIndex = polygon.PolygonId,
                 A = E.A,
                 B = E.OffsetB
             };
@@ -738,51 +738,59 @@ namespace PolygonEditor
             LastVertex.RightEdge = OffsetEdge;
             FirstVertex.LeftEdge = OffsetEdge;
 
+            // do tego momentu mamy wyznaczoną dobrze otoczke nie patrzymy na przeciecia
 
             // w tej pętli mamy odnalezione przecięcia otoczki
             var markedEdges = new List<Edge>();
             var markedVertices = new List<Vertex>();
             var neighboursOfMarkedVertices = new List<Vertex>();
 
+
+            var flag = false;
             foreach(var offsetEdge in polygon.OffsetPolygon.Edges)
             {
-                var result = Edge.Intersecting(offsetEdge, polygon.OffsetPolygon);
-                if (result is null) continue;
+                var intersections = Edge.Intersecting(offsetEdge, polygon.OffsetPolygon);
+                if (intersections.Count == 0) continue;
 
-                // if crossing already exist
-                var crossingEdge = result.Value.edge;
-                if(crossingEdge.Mark is not null)
+                flag = true;
+                foreach(var intersection in intersections)
                 {
-                    offsetEdge.Mark = crossingEdge.Mark;
-                    markedEdges.Add(offsetEdge);
-                    offsetEdge.Left.Right = crossingEdge.Mark;
-                    offsetEdge.Right.Left = crossingEdge.Mark;
-                    neighboursOfMarkedVertices.Add(offsetEdge.Left);
-                    neighboursOfMarkedVertices.Add(offsetEdge.Right);
-                    continue;
+                    var e1 = intersection.Item1;
+                    var e2 = intersection.Item2;
+                    var point = Edge.IntersectionCoords(e1, e2);
+
+                    var vertex = new Vertex { Graphic = initPointGraphic(true) };
+                    vertex.isMarked = true;
+                    vertex.Graphic.Stroke = Brushes.Red;
+
+                    DrawPoint(vertex, point.X, point.Y);
+                    polygon.OffsetPolygon.Vertices.Add(vertex);
+                    e1.AddMarkedVetex(vertex);
                 }
-
-                // crossing was not discovered yet
-                var vertex = new Vertex { Graphic = initPointGraphic(true) };
-                vertex.isMarked = true;
-                vertex.Graphic.Stroke = Brushes.Red;
-
-                offsetEdge.Left.Right = vertex;
-                offsetEdge.Right.Left = vertex;
-                
-                DrawPoint(vertex, result.Value.point.X, result.Value.point.Y);
-                offsetEdge.Mark = vertex;
-
-                markedEdges.Add(offsetEdge);
-                markedVertices.Add(vertex);
-                neighboursOfMarkedVertices.Add(offsetEdge.Left);
-                neighboursOfMarkedVertices.Add(offsetEdge.Right);
             }
 
-            if (markedVertices.Count != 2) return;
+
+            // tzn, ze nie ma zadnych przeciec
+            if (!flag) return;
+
+            // do tego momentu mamy poprawnie odnalezione przeciecia z tym że, są zdublowane i chyba dodane wskazniki
+
+            var start = polygon.OffsetPolygon.LastVertex;
+            while (!start.isMarked) start = start.Right;
+
+            // tutaj teoretycznie wchodzimy do czesci w srodku wielokata
+            start = start.Right;
+            while(!start.isMarked)
+            {
+                mainCanvas.Children.Remove(start.Graphic);
+                start = start.Right;
+            }
+
+
+            return;
 
             foreach(var mark in markedEdges)
-            {
+                    {
                 mainCanvas.Children.Remove(mark.Graphic);
 
                 var leftEdge = new Edge
@@ -791,7 +799,7 @@ namespace PolygonEditor
                     Left = mark.Left,
                     Right = mark.Mark,
                     PolygonIndex = mark.Left.PolygonIndex,
-                };
+                    };
                 mainCanvas.Children.Add(leftEdge.Graphic);
                 polygon.OffsetPolygon.AddEdge(leftEdge);
                 mark.Left.RightEdge = leftEdge;
@@ -808,17 +816,6 @@ namespace PolygonEditor
                 mark.Right.LeftEdge = rightEdge;
             }
 
-            foreach(var markedVertex in neighboursOfMarkedVertices)
-            {
-                if (markedVertex.isMarked) continue;
-                if(markedVertex.Left.isMarked && markedVertex.Right.isMarked)
-                {
-                    mainCanvas.Children.Remove(markedVertex.Graphic);
-                    mainCanvas.Children.Remove(markedVertex.RightEdge.Graphic);
-                    mainCanvas.Children.Remove(markedVertex.LeftEdge.Graphic);
-                }
-            }
-            
             return;
         }
         private void RemoveOffset(Polygon _polygon)
@@ -863,5 +860,56 @@ namespace PolygonEditor
                 }
             }
         }
+
+        private void splitEdgeWithVertex(Polygon polygon, Edge edge, Vertex vertex)
+        {
+            // Erase old edge
+            mainCanvas.Children.Remove(edge.Graphic);
+            mainCanvas.Children.Remove(edge.Icon);
+            var index = polygon.Edges.IndexOf(edge);
+            polygon.Edges.Remove(edge);
+
+            var left = edge.Left ?? throw new Exception("SplitException: left end is null");
+            var right = edge.Right ?? throw new Exception("SplitException: right end is null");
+            var polygonIndex = edge.PolygonIndex;
+
+            // vertex init
+            vertex.Left = left;
+            vertex.Right = right;
+
+            // i need to insert it not just add od do I ?
+            polygon.Vertices.Add(vertex);
+
+            var leftEdge = new Edge
+            {
+                Graphic = initEdgeGraphic(left, vertex),
+                Left = left,
+                Right = vertex,
+                PolygonIndex = polygonIndex,
+            };
+            polygon.Edges.Insert(polygonIndex, leftEdge);
+            mainCanvas.Children.Add(leftEdge.Graphic);
+
+            var rightEdge = new Edge
+            {
+                Graphic = initEdgeGraphic(vertex,right),
+                Left = vertex,
+                Right = right,
+                PolygonIndex = polygonIndex,
+            };
+            polygon.Edges.Insert(polygonIndex + 1, rightEdge);
+            mainCanvas.Children.Add(rightEdge.Graphic);
+
+            left.Right = vertex;
+            right.Left = vertex;
+
+            left.RightEdge = leftEdge;
+            right.LeftEdge = rightEdge;
+
+            vertex.LeftEdge = leftEdge;
+            vertex.RightEdge = rightEdge;
+
+        }
     }
+    
 }

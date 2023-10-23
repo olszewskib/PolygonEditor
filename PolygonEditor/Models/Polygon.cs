@@ -18,6 +18,8 @@ namespace PolygonEditor.Models
 
         public List<Vertex> Vertices = new();
 
+        public List<Vertex> Crossings = new();
+
         public List<Edge> Edges = new();
         public Polygon(Vertex first, Vertex last)
         {
@@ -38,6 +40,10 @@ namespace PolygonEditor.Models
             // adding new vertex
             LastVertex = v;
             Vertices.Add(v);
+        }
+        public void InsertVertexAt(Vertex v, Edge e)
+        {
+            throw new NotImplementedException();
         }
         public void AddEdge(Edge e)
         {
