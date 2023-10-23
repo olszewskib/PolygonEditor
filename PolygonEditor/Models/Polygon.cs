@@ -10,6 +10,8 @@ namespace PolygonEditor.Models
     {
         public static int Id = -1;
 
+        public int PolygonId { get; private set; }
+
         public Polygon? OffsetPolygon;
         public Vertex FirstVertex { get; set; }
         public Vertex LastVertex { get; set; }
@@ -20,6 +22,7 @@ namespace PolygonEditor.Models
         public Polygon(Vertex first, Vertex last)
         {
             Id++;
+            PolygonId = Id;
             FirstVertex = first;
             LastVertex = last;
         }

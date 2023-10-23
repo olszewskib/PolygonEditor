@@ -23,6 +23,17 @@ namespace PolygonEditor
     {
         private List<Polygon> polygons = new();
         private bool isPolygonForming = false;
+        private int selectedPolygonId = 0;
+        public int SelectedPolygonId
+        {
+            get => selectedPolygonId;
+            set
+            {
+                selectedPolygonId = value;
+                offsetCheckBox.Content = FillLabel(value);
+                offsetCheckBox.IsChecked = polygons[value].OffsetPolygon is not null;
+            }
+        }
 
         // Variables for menuEvents
         private Polygon? polygonToMove;
@@ -42,9 +53,11 @@ namespace PolygonEditor
         {
             InitializeComponent();
             polygonOneInit();
+            offsetCheckBox.Content = FillLabel(selectedPolygonId);
         }
-        
+
         // General functions
+        private string FillLabel(int id) => $"Offset: Polygon {id}";
         private (double,double) GetMousePosition()
         {
             var X = Mouse.GetPosition(mainCanvas).X;
@@ -253,19 +266,11 @@ namespace PolygonEditor
                 Vertex.DragVertex(draggedVertex, newPosition, lastPosition);
 
                 // offset polygon 
-                var polygon = polygons[draggedVertex.PolygonIndex].OffsetPolygon;
-                if (polygon is not null)
+                var polygon = polygons[draggedVertex.PolygonIndex];
+                if (polygon.OffsetPolygon is not null)
                 {
-                    foreach(var edge in polygon.Edges)
-                    {
-                        mainCanvas.Children.Remove(edge.Graphic);
-                        if (edge.Mark is not null) mainCanvas.Children.Remove(edge.Mark.Graphic);
-                    }
-                    foreach(var point in polygon.Vertices)
-                    {
-                        mainCanvas.Children.Remove(point.Graphic);
-                    }
-                    MenuItem_Click_AddOffset(sender, e);
+                    RemoveOffset(polygon);
+                    AddOffset(polygon);
                 }
 
                 lastPosition = newPosition;
@@ -401,8 +406,10 @@ namespace PolygonEditor
             {
                 if (e.OriginalSource is Canvas canvas)
                 {
-                    polygonToMove = Polygon.FindPolygon(new System.Windows.Point(x, y), polygons);
+                    polygonToMove = Polygon.FindPolygon(new Point(x, y), polygons);
                     if (polygonToMove is null) return;
+
+                    SelectedPolygonId = polygonToMove.PolygonId;
 
                     canvas.CaptureMouse();
                     isDragging = true;
@@ -672,11 +679,10 @@ namespace PolygonEditor
         }
         
         // offset
-        private void MenuItem_Click_AddOffset(object sender, RoutedEventArgs e)
+        private void AddOffset(Polygon _polygon)
         {
 
-            if (menuVertex is null) throw new Exception();
-            var polygon = polygons[menuVertex.PolygonIndex];
+            var polygon = _polygon;
             polygon.SetOffestForEdges(offset);
 
 
@@ -704,7 +710,7 @@ namespace PolygonEditor
                     Graphic = initEdgeGraphic(lastVertex, vertex),
                     Left = lastVertex,
                     Right = vertex,
-                    PolygonIndex = menuVertex.PolygonIndex, // to do remove this menu vertex
+                    PolygonIndex = polygon.PolygonId, // to do remove this menu vertex
                     A = edge.A,
                     B = edge.OffsetB
                 };
@@ -723,7 +729,7 @@ namespace PolygonEditor
                 Graphic = initEdgeGraphic(LastVertex, FirstVertex),
                 Left = LastVertex,
                 Right = FirstVertex,
-                PolygonIndex = menuVertex.PolygonIndex, // to do remove this menu vertex
+                PolygonIndex = polygon.PolygonId, // to do remove this menu vertex
                 A = E.A,
                 B = E.OffsetB
             };
@@ -815,23 +821,47 @@ namespace PolygonEditor
             
             return;
         }
+        private void RemoveOffset(Polygon _polygon)
+        {
+            var polygon = _polygon.OffsetPolygon;
+            if (polygon is not null)
+            {
+                foreach(var edge in polygon.Edges)
+                {
+                    mainCanvas.Children.Remove(edge.Graphic);
+                    if (edge.Mark is not null) mainCanvas.Children.Remove(edge.Mark.Graphic);
+                }
+                foreach(var point in polygon.Vertices)
+                {
+                    mainCanvas.Children.Remove(point.Graphic);
+                }
+                _polygon.OffsetPolygon = null;
+            }
+        }
         private void offsetSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            return;
-            // need to add a way to bind it to the polygone    
             if (polygons.Count == 0) return;
             offset = e.NewValue;
-            var polygon = polygons[0].OffsetPolygon;
-            foreach(var edge in polygon.Edges)
+            var polygon = polygons[selectedPolygonId];
+            RemoveOffset(polygon);
+            AddOffset(polygon);
+        }
+        private void offsetCheckBox_Clicked(object sender, RoutedEventArgs e)
+        {
+            if (offsetCheckBox.IsChecked is bool check)
             {
-                mainCanvas.Children.Remove(edge.Graphic);
+                var polygon = polygons[selectedPolygonId];
+                if(check)
+                {
+                    offsetSlider.IsEnabled = true;
+                    AddOffset(polygon);
+                }
+                else
+                {
+                    offsetSlider.IsEnabled = false;
+                    RemoveOffset(polygon);
+                }
             }
-            foreach(var point in polygon.Vertices)
-            {
-                mainCanvas.Children.Remove(point.Graphic);
-            }
-            MenuItem_Click_AddOffset(sender, e);
-
         }
     }
 }

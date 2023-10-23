@@ -10,7 +10,6 @@
     <Window.Resources>
         <ContextMenu x:Key="VertexMenu">
             <MenuItem Header="Remove Vertex" Click="MenuItem_Click_RemoveVertex"/>
-            <MenuItem Header="Add offset" Click="MenuItem_Click_AddOffset"/>
         </ContextMenu>
         <ContextMenu x:Key="EdgeMenu">
             <MenuItem Name="SplitEdge"
@@ -31,14 +30,17 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="20"/>
+            <ColumnDefinition Width="150"/>
+            <ColumnDefinition Width="200"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
             
-        <CheckBox x:Name="isBresenhamCheckBox" Content="Bresenham algorithm"/>
-        <Slider x:Name="offsetSlider" Minimum="20" Maximum="100" Grid.Column="2" ValueChanged="offsetSlider_ValueChanged"/>
+        <CheckBox x:Name="isBresenhamCheckBox" Content="Bresenham algorithm" VerticalAlignment="Center"/>
+        <CheckBox x:Name="offsetCheckBox" Grid.Column="2"  Content="Offset: " VerticalAlignment="Center" Click="offsetCheckBox_Clicked"/>
+        <Slider x:Name="offsetSlider" IsEnabled="False" Minimum="0" Maximum="150" Value="40" Grid.Column="3" ValueChanged="offsetSlider_ValueChanged"/>
         <Canvas Name="mainCanvas" 
             Grid.Row="1"
-            Grid.ColumnSpan="3"
+            Grid.ColumnSpan="5"
             MouseDown="mainCanvas_MouseDown"
             MouseMove="mainCanvas_MouseMove"
             MouseUp="mainCanvas_MouseUp"
