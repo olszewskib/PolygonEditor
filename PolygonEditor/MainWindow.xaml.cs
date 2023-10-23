@@ -736,6 +736,8 @@ namespace PolygonEditor
             // w tej pętli mamy odnalezione przecięcia otoczki
             var markedEdges = new List<Edge>();
             var markedVertices = new List<Vertex>();
+            var neighboursOfMarkedVertices = new List<Vertex>();
+
             foreach(var offsetEdge in polygon.OffsetPolygon.Edges)
             {
                 var result = Edge.Intersecting(offsetEdge, polygon.OffsetPolygon);
@@ -747,20 +749,31 @@ namespace PolygonEditor
                 {
                     offsetEdge.Mark = crossingEdge.Mark;
                     markedEdges.Add(offsetEdge);
+                    offsetEdge.Left.Right = crossingEdge.Mark;
+                    offsetEdge.Right.Left = crossingEdge.Mark;
+                    neighboursOfMarkedVertices.Add(offsetEdge.Left);
+                    neighboursOfMarkedVertices.Add(offsetEdge.Right);
                     continue;
                 }
 
                 // crossing was not discovered yet
                 var vertex = new Vertex { Graphic = initPointGraphic(true) };
-                vertex.MarkedEdges = new List<Edge>();
+                vertex.isMarked = true;
                 vertex.Graphic.Stroke = Brushes.Red;
+
+                offsetEdge.Left.Right = vertex;
+                offsetEdge.Right.Left = vertex;
                 
                 DrawPoint(vertex, result.Value.point.X, result.Value.point.Y);
                 offsetEdge.Mark = vertex;
 
                 markedEdges.Add(offsetEdge);
                 markedVertices.Add(vertex);
+                neighboursOfMarkedVertices.Add(offsetEdge.Left);
+                neighboursOfMarkedVertices.Add(offsetEdge.Right);
             }
+
+            if (markedVertices.Count != 2) return;
 
             foreach(var mark in markedEdges)
             {
@@ -775,6 +788,7 @@ namespace PolygonEditor
                 };
                 mainCanvas.Children.Add(leftEdge.Graphic);
                 polygon.OffsetPolygon.AddEdge(leftEdge);
+                mark.Left.RightEdge = leftEdge;
 
                 var rightEdge = new Edge
                 {
@@ -785,37 +799,20 @@ namespace PolygonEditor
                 };
                 mainCanvas.Children.Add(rightEdge.Graphic);
                 polygon.OffsetPolygon.AddEdge(rightEdge);
-
-                mark.Mark.MarkedEdges.Add(leftEdge);
-                mark.Mark.MarkedEdges.Add(rightEdge);
-
+                mark.Right.LeftEdge = rightEdge;
             }
 
-
-            foreach(var markedVertex in markedVertices)
+            foreach(var markedVertex in neighboursOfMarkedVertices)
             {
-                foreach(var segment in markedVertex.MarkedEdges)
+                if (markedVertex.isMarked) continue;
+                if(markedVertex.Left.isMarked && markedVertex.Right.isMarked)
                 {
-                    var left = segment.Left;
-                    var right = segment.Right;
-
-                    if(left != markedVertex && markedVertices.Contains(left.Left))
-                    {
-                        mainCanvas.Children.Remove(left.Graphic);
-                        mainCanvas.Children.Remove(left.RightEdge.Graphic);
-                        mainCanvas.Children.Remove(left.LeftEdge.Graphic);
-
-                    }
-                    if(right != markedVertex && markedVertices.Contains(right.Right))
-                    {
-                        mainCanvas.Children.Remove(right.Graphic);
-                        mainCanvas.Children.Remove(right.RightEdge.Graphic);
-                        mainCanvas.Children.Remove(right.LeftEdge.Graphic);
-
-                    }
+                    mainCanvas.Children.Remove(markedVertex.Graphic);
+                    mainCanvas.Children.Remove(markedVertex.RightEdge.Graphic);
+                    mainCanvas.Children.Remove(markedVertex.LeftEdge.Graphic);
                 }
             }
-
+            
             return;
         }
         private void offsetSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
