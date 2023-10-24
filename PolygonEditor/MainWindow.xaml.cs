@@ -349,6 +349,14 @@ namespace PolygonEditor
 
                 Edge.DragEdge(draggedEdge,newPosition,lastPosition);
 
+                // offset polygon 
+                var polygon = polygons[draggedEdge.PolygonIndex];
+                if (polygon.OffsetPolygon is not null)
+                {
+                    RemoveOffset(polygon);
+                    AddOffset(polygon);
+                }
+
                 lastPosition = newPosition;
             }
         }
@@ -487,6 +495,14 @@ namespace PolygonEditor
                     Vertex.DragVertex(vertex, new Point(X + deltaX, Y + deltaY), new System.Windows.Point(X, Y), Constraint.All);
                 }
 
+                // offset polygon 
+                var polygon = polygons[polygonToMove.PolygonId];
+                if (polygon.OffsetPolygon is not null)
+                {
+                    RemoveOffset(polygon);
+                    AddOffset(polygon);
+                }
+
                 lastPosition = newPosition;
             }
         }
@@ -512,6 +528,48 @@ namespace PolygonEditor
             polygons[e.PolygonIndex].AddEdge(e);
             mainCanvas.Children.Add(e.Graphic);
         }
+        private void splitEdgeWithVertex(Polygon polygon, Edge edge, Vertex vertex)
+        {
+            // Erase old edge
+            mainCanvas.Children.Remove(edge.Graphic);
+            mainCanvas.Children.Remove(edge.Icon);
+            var index = polygon.Edges.IndexOf(edge);
+            polygon.Edges.Remove(edge);
+
+            var left = edge.Left ?? throw new Exception("SplitException: left end is null");
+            var right = edge.Right ?? throw new Exception("SplitException: right end is null");
+            var polygonIndex = edge.PolygonIndex;
+
+            var leftEdge = new Edge
+            {
+                Graphic = initEdgeGraphic(left, vertex),
+                Left = left,
+                Right = vertex,
+                PolygonIndex = polygonIndex,
+            };
+            polygon.Edges.Insert(index, leftEdge);
+            mainCanvas.Children.Add(leftEdge.Graphic);
+
+            var rightEdge = new Edge
+            {
+                Graphic = initEdgeGraphic(vertex,right),
+                Left = vertex,
+                Right = right,
+                PolygonIndex = polygonIndex,
+            };
+            polygon.Edges.Insert(index + 1, rightEdge);
+            mainCanvas.Children.Add(rightEdge.Graphic);
+
+            left.Right = vertex;
+            right.Left = vertex;
+
+            left.RightEdge = leftEdge;
+            right.LeftEdge = rightEdge;
+
+            vertex.LeftEdge = leftEdge;
+            vertex.RightEdge = rightEdge;
+
+        }
 
         // MenuItems events
         private void MenuItem_Click_RemoveVertex(object sender, RoutedEventArgs e)
@@ -520,6 +578,12 @@ namespace PolygonEditor
             
             if (menuVertex is null) return;
             if (menuVertex.LeftEdge is null || menuVertex.RightEdge is null) throw new Exception("VertexRemovalException: null edges");
+
+            var polygonIndex = menuVertex.PolygonIndex;
+            var polygon = polygons[polygonIndex];
+            var index = polygon.Edges.IndexOf(menuVertex.LeftEdge);
+            polygon.Edges.Remove(menuVertex.LeftEdge);
+            polygon.Edges.Remove(menuVertex.RightEdge);
 
             mainCanvas.Children.Remove(menuVertex.RightEdge.Graphic);
             mainCanvas.Children.Remove(menuVertex.LeftEdge.Graphic);
@@ -537,7 +601,8 @@ namespace PolygonEditor
                 Right = menuVertex.Right,
                 PolygonIndex = menuVertex.PolygonIndex
             };
-            DrawEdge(edge);
+            polygon.Edges.Insert(index, edge);
+            mainCanvas.Children.Add(edge.Graphic);
 
             menuVertex.Right.LeftEdge = edge;
             menuVertex.Left.RightEdge = edge;
@@ -546,6 +611,11 @@ namespace PolygonEditor
         private void MenuItem_Click_SplitEdge(object sender, RoutedEventArgs e)
         {
             if (menuEdge is null) return;
+            var polygonIndex = menuEdge.PolygonIndex;
+            var polygon = polygons[polygonIndex];
+            var index = polygon.Edges.IndexOf(menuEdge);
+            polygon.Edges.Remove(menuEdge);
+
 
             // Erase old edge
             mainCanvas.Children.Remove(menuEdge.Graphic);
@@ -563,7 +633,7 @@ namespace PolygonEditor
             var vertex = new Vertex
             {
                 Graphic = initPointGraphic(),
-                PolygonIndex = menuEdge.PolygonIndex,
+                PolygonIndex = polygonIndex,
                 Left = left,
                 Right = right,
             };
@@ -572,21 +642,23 @@ namespace PolygonEditor
 
             var leftEdge = new Edge
             {
-                Graphic = initEdgeGraphic(menuEdge.Left, vertex),
-                Left = menuEdge.Left,
+                Graphic = initEdgeGraphic(left, vertex),
+                Left = left,
                 Right = vertex,
-                PolygonIndex = menuEdge.PolygonIndex,
+                PolygonIndex = polygonIndex,
             };
-            DrawEdge(leftEdge);
+            polygon.Edges.Insert(index, leftEdge);
+            mainCanvas.Children.Add(leftEdge.Graphic);
 
             var rightEdge = new Edge
             {
-                Graphic = initEdgeGraphic(vertex,menuEdge.Right),
+                Graphic = initEdgeGraphic(vertex,right),
                 Left = vertex,
-                Right = menuEdge.Right,
-                PolygonIndex = menuEdge.PolygonIndex
+                Right = right,
+                PolygonIndex = polygonIndex
             };
-            DrawEdge(rightEdge);
+            polygon.Edges.Insert(index+1, rightEdge);
+            mainCanvas.Children.Add(rightEdge.Graphic);
 
             left.Right = vertex;
             right.Left = vertex;
@@ -806,7 +878,8 @@ namespace PolygonEditor
                     loop++;
                     if(loop % 2 == 0)
                     {
-                        mainCanvas.Children.Remove(start.RightEdge.Graphic);
+                        if(start.Right is not null && start.RightEdge is not null)
+                            mainCanvas.Children.Remove(start.RightEdge.Graphic);
                         if (!start.Right.isMarked) mainCanvas.Children.Remove(start.Right.Graphic);
                     }
                     start = start.Right;
@@ -819,7 +892,8 @@ namespace PolygonEditor
                     continue;
                 }
 
-                mainCanvas.Children.Remove(start.RightEdge.Graphic);
+                if(start.Right is not null && start.RightEdge is not null)
+                    mainCanvas.Children.Remove(start.RightEdge.Graphic);
                 if (!start.Right.isMarked) mainCanvas.Children.Remove(start.Right.Graphic);
                 start = start.Right;
 
@@ -867,48 +941,6 @@ namespace PolygonEditor
                     RemoveOffset(polygon);
                 }
             }
-        }
-        private void splitEdgeWithVertex(Polygon polygon, Edge edge, Vertex vertex)
-        {
-            // Erase old edge
-            mainCanvas.Children.Remove(edge.Graphic);
-            mainCanvas.Children.Remove(edge.Icon);
-            var index = polygon.Edges.IndexOf(edge);
-            polygon.Edges.Remove(edge);
-
-            var left = edge.Left ?? throw new Exception("SplitException: left end is null");
-            var right = edge.Right ?? throw new Exception("SplitException: right end is null");
-            var polygonIndex = edge.PolygonIndex;
-
-            var leftEdge = new Edge
-            {
-                Graphic = initEdgeGraphic(left, vertex),
-                Left = left,
-                Right = vertex,
-                PolygonIndex = polygonIndex,
-            };
-            polygon.Edges.Insert(index, leftEdge);
-            mainCanvas.Children.Add(leftEdge.Graphic);
-
-            var rightEdge = new Edge
-            {
-                Graphic = initEdgeGraphic(vertex,right),
-                Left = vertex,
-                Right = right,
-                PolygonIndex = polygonIndex,
-            };
-            polygon.Edges.Insert(index + 1, rightEdge);
-            mainCanvas.Children.Add(rightEdge.Graphic);
-
-            left.Right = vertex;
-            right.Left = vertex;
-
-            left.RightEdge = leftEdge;
-            right.LeftEdge = rightEdge;
-
-            vertex.LeftEdge = leftEdge;
-            vertex.RightEdge = rightEdge;
-
         }
     }
     

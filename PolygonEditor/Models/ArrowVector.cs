@@ -14,7 +14,8 @@ namespace PolygonEditor.Models
         II,
         III,
         IV,
-        Axis
+        AxisP,
+        AxisM
     }
     internal class ArrowVector
     {
@@ -40,16 +41,16 @@ namespace PolygonEditor.Models
         {
             var quadrant = checkVectorOrientation(this);
 
-            if (quadrant == Quadrant.I || quadrant == Quadrant.IV)
+            if (quadrant == Quadrant.I || quadrant == Quadrant.IV || quadrant == Quadrant.AxisP)
             {
                 return 1;
             }
-            if (quadrant == Quadrant.II || quadrant == Quadrant.III)
+            if (quadrant == Quadrant.II || quadrant == Quadrant.III || quadrant == Quadrant.AxisM)
             {
                 return -1;
             }
 
-            // add axis support
+            // safety
             return 1;
         }
 
@@ -65,7 +66,9 @@ namespace PolygonEditor.Models
             if (newEndX < 0 && newEndY > 0) return Quadrant.II;
             if (newEndX < 0 && newEndY < 0) return Quadrant.III;
             if (newEndX > 0 && newEndY < 0) return Quadrant.IV;
-            return Quadrant.Axis;
+
+            if (newEndY < 0 || newEndX > 0) return Quadrant.AxisP;
+            return Quadrant.AxisM;
         }
 
         public static double VectorProduct(Point p1, Point p2)

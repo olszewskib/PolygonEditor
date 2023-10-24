@@ -18,8 +18,6 @@ namespace PolygonEditor.Models
 
         public List<Vertex> Vertices = new();
 
-        public List<Vertex> Crossings = new();
-
         public List<Edge> Edges = new();
         public Polygon(Vertex first, Vertex last)
         {
@@ -114,7 +112,6 @@ namespace PolygonEditor.Models
             }
             
         }
-
         public bool isVertexToCloseToPolygon(Vertex v, double offset)
         {
             foreach(var edge in Edges)
