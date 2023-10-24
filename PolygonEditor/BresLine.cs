@@ -66,9 +66,6 @@ namespace PolygonEditor
                 int x2 = X2 > UpperLimitX ? UpperLimitX : (int)X2;
                 int y2 = Y2 > UpperLimitY ? UpperLimitY : (int)Y2;
 
-                Debug.Print($"[{x1},{y1}]");
-                Debug.Print($"[{x2},{y2}]");
-
                 int dx = Math.Abs(x2 - x1);
                 int dy = Math.Abs(y2 - y1);
                 int sx = x1 < x2 ? 1 : -1;
