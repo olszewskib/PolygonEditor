@@ -190,6 +190,7 @@ namespace PolygonEditor
             Point center2 = v2.Center;
 
             var isChecked = isBresenhamCheckBox.IsChecked ?? throw new Exception("CheckboxException: NotFound somehow");
+            var isSymetric = isSymetricBresenhamCheckBox.IsChecked ?? throw new Exception();
 
             BresLine edge = new()
             {
@@ -199,6 +200,7 @@ namespace PolygonEditor
                 Y2 = center2.Y,
                 LineColor = Brushes.Black,
                 IsBresenham = isChecked,
+                IsSymetricBresenham = isSymetric,
             };
 
             if (noEvents) return edge;

@@ -36,11 +36,12 @@
         </Grid.ColumnDefinitions>
             
         <CheckBox x:Name="isBresenhamCheckBox" Content="Bresenham algorithm" VerticalAlignment="Center"/>
-        <CheckBox x:Name="offsetCheckBox" Grid.Column="2"  Content="Offset: " VerticalAlignment="Center" Click="offsetCheckBox_Clicked"/>
-        <Slider x:Name="offsetSlider" IsEnabled="False" Minimum="10" Maximum="100" Value="40" Grid.Column="3" ValueChanged="offsetSlider_ValueChanged"/>
+        <CheckBox x:Name="isSymetricBresenhamCheckBox" Grid.Column="2" Content="Symetric algorithm" VerticalAlignment="Center"/>
+        <CheckBox x:Name="offsetCheckBox" Grid.Column="3"  Content="Offset: " VerticalAlignment="Center" Click="offsetCheckBox_Clicked"/>
+        <Slider x:Name="offsetSlider" IsEnabled="False" Minimum="10" Maximum="100" Value="40" Grid.Column="4" ValueChanged="offsetSlider_ValueChanged"/>
         <Canvas Name="mainCanvas" 
             Grid.Row="1"
-            Grid.ColumnSpan="5"
+            Grid.ColumnSpan="6"
             MouseDown="mainCanvas_MouseDown"
             MouseMove="mainCanvas_MouseMove"
             MouseUp="mainCanvas_MouseUp"

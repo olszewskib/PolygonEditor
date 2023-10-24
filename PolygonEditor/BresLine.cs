@@ -7,6 +7,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls.Ribbon.Primitives;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using PolygonEditor.Models;
@@ -77,7 +78,7 @@ namespace PolygonEditor
         protected override void OnRender(DrawingContext drawingContext)
         {
             base.OnRender(drawingContext);
-            if (!isBresengam)
+            if (!isBresengam && !isSymetricBresenham)
             {
                 Pen line = new Pen(lineColor, lineWidth);
                 drawingContext.DrawLine(line,new Point(X1,Y1), new Point(X2,Y2));
@@ -95,6 +96,7 @@ namespace PolygonEditor
                 int sx = x1 < x2 ? 1 : -1;
                 int sy = y1 < y2 ? 1 : -1;
                 int err = dx - dy;
+
 
                 while (true)
                 {
@@ -119,6 +121,43 @@ namespace PolygonEditor
             }
             else if (isSymetricBresenham)
             {
+                Pen pen = new Pen(lineColor, 2);
+                int x1 = X1 > UpperLimitX ? UpperLimitX : (int)X1;
+                int y1 = Y1 > UpperLimitY ? UpperLimitY : (int)Y1;
+                int x2 = X2 > UpperLimitX ? UpperLimitX : (int)X2;
+                int y2 = Y2 > UpperLimitY ? UpperLimitY : (int)Y2;
+
+                int dx = Math.Abs(x2 - x1);
+                int dy = Math.Abs(y2 - y1);
+                int sx = x1 < x2 ? 1 : -1;
+                int sy = y1 < y2 ? 1 : -1;
+                int err = dx - dy;
+
+                int xb = x2;
+                int yb = y2;
+
+                while (true)
+                {
+                    drawingContext.DrawRectangle(pen.Brush, pen, new Rect(x1, y1, 1, lineWidth));
+                    drawingContext.DrawRectangle(pen.Brush, pen, new Rect(xb, yb, 1, lineWidth));
+
+                    if (Math.Abs(x1 - xb) <= 1  && Math.Abs(y1 - yb) <= 1) break;
+
+                    int e2 = 2 * err;
+                    if (e2 > -dy)
+                    {
+                        err -= dy;
+                        x1 += sx;
+                        xb -= sx;
+                    }
+
+                    if (e2 < dx)
+                    {
+                        err += dx;
+                        y1 += sy;
+                        yb -= sy;
+                    }
+                }
 
             }
         }
