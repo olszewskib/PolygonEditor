@@ -23,7 +23,7 @@ namespace PolygonEditor
     {
         private List<Polygon> polygons = new();
         private bool isPolygonForming = false;
-        private int selectedPolygonId = 0;
+        private int selectedPolygonId = 1;
         public int SelectedPolygonId
         {
             get => selectedPolygonId;
@@ -54,6 +54,7 @@ namespace PolygonEditor
         {
             InitializeComponent();
             polygonOneInit();
+            polygonTwoInit();
             offsetCheckBox.Content = FillLabel(selectedPolygonId);
         }
 
@@ -70,11 +71,34 @@ namespace PolygonEditor
         private void polygonOneInit()
         {
             var polygon = initPolygon(334, 666);
-            addPointToPolygon(454,573, polygon);
-            addPointToPolygon(321,486, polygon);
+            var edge1 =addPointToPolygon(454,573, polygon);
+            var edge2 = addPointToPolygon(321,486, polygon);
             addPointToPolygon(540,396, polygon);
             addPointToPolygon(521,727, polygon);
             closePolygon(polygon);
+
+            AddPerpendicularConstraint(edge1);
+            AddParallelConstraint(edge2);
+        }
+
+        private void polygonTwoInit()
+        {
+            var polygon = initPolygon(917, 694);
+            addPointToPolygon(992,608, polygon);
+            addPointToPolygon(906,519, polygon);
+            addPointToPolygon(1049,426, polygon);
+            addPointToPolygon(1139,525, polygon);
+            addPointToPolygon(1049,598, polygon);
+            addPointToPolygon(1108,682, polygon);
+            addPointToPolygon(1261,678, polygon);
+            var edge1 = addPointToPolygon(1253,244, polygon);
+            addPointToPolygon(753,256, polygon);
+            var edge2 = addPointToPolygon(849,512, polygon);
+            addPointToPolygon(706,689, polygon);
+            closePolygon(polygon);
+
+            AddPerpendicularConstraint(edge1);
+            AddParallelConstraint(edge2);
         }
 
         // Constructing a polygons
@@ -89,7 +113,7 @@ namespace PolygonEditor
             return polygon;
 
         }
-        private void addPointToPolygon(double x, double y, Polygon polygon)
+        private Edge addPointToPolygon(double x, double y, Polygon polygon, Constraint constraint = Constraint.None)
         {
             var vertex = new Vertex 
             { 
@@ -104,11 +128,13 @@ namespace PolygonEditor
                 Graphic = initEdgeGraphic(lastVertex,vertex),
                 Left = lastVertex,
                 Right = vertex,
-                PolygonIndex = vertex.PolygonIndex
+                PolygonIndex = vertex.PolygonIndex,
+                Constraint = constraint,
             };
             DrawEdge(edge);
 
             polygon.AddVertex(vertex);
+            return edge;
         }
         private void closePolygon(Polygon polygon)
         {
@@ -695,21 +721,27 @@ namespace PolygonEditor
         private void MenuItem_Click_ParallelConstraint(object sender, RoutedEventArgs e)
         {
             if (menuEdge is null) return;
-            var polygon = polygons[menuEdge.PolygonIndex];
+            AddParallelConstraint(menuEdge);
 
-            if(menuEdge.Constraint == Constraint.Parallel)
+        }
+        private void AddParallelConstraint(Edge edge)
+        {
+            if (edge is null) return;
+            var polygon = polygons[edge.PolygonIndex];
+
+            if(edge.Constraint == Constraint.Parallel)
             {
-                menuEdge.Constraint = Constraint.None;
-                if(menuEdge.Icon is not null)
+                edge.Constraint = Constraint.None;
+                if(edge.Icon is not null)
                 {
-                    mainCanvas.Children.Remove(menuEdge.Icon);
-                    menuEdge.Icon = null;
+                    mainCanvas.Children.Remove(edge.Icon);
+                    edge.Icon = null;
                 }
                 return;
             }
 
-            var left = menuEdge.Left ?? throw new Exception("ConstraintException: left end is null");
-            var right = menuEdge.Right ?? throw new Exception("ConstraintException: left end is null");
+            var left = edge.Left ?? throw new Exception("ConstraintException: left end is null");
+            var right = edge.Right ?? throw new Exception("ConstraintException: left end is null");
             var leftCenter = left.Center;
             var rightCenter = right.Center;
 
@@ -719,7 +751,7 @@ namespace PolygonEditor
 
             Vertex.DragVertex(vertexToMove.Item1, newPosition, vertexToMove.Item2);
 
-            menuEdge.Constraint = Constraint.Parallel;
+            edge.Constraint = Constraint.Parallel;
 
             var icon = new Image()
             {
@@ -731,7 +763,7 @@ namespace PolygonEditor
             Canvas.SetLeft(icon, ((leftCenter.X + rightCenter.X) / 2) - iconSize/2);
             Canvas.SetTop(icon, newPosition.Y);
             mainCanvas.Children.Add(icon);
-            menuEdge.Icon = icon;
+            edge.Icon = icon;
 
             if (polygon.OffsetPolygon is not null)
             {
@@ -742,21 +774,27 @@ namespace PolygonEditor
         private void MenuItem_Click_PerpendicularConstraint(object sender, RoutedEventArgs e)
         {
             if (menuEdge is null) return;
-            var polygon = polygons[menuEdge.PolygonIndex];
+            AddPerpendicularConstraint(menuEdge);
 
-            if(menuEdge.Constraint == Constraint.Perpendicular)
+        }
+        private void AddPerpendicularConstraint(Edge edge)
+        {
+            if (edge is null) return;
+            var polygon = polygons[edge.PolygonIndex];
+
+            if(edge.Constraint == Constraint.Perpendicular)
             {
-                menuEdge.Constraint = Constraint.None;
-                if(menuEdge.Icon is not null)
+                edge.Constraint = Constraint.None;
+                if(edge.Icon is not null)
                 {
-                    mainCanvas.Children.Remove(menuEdge.Icon);
-                    menuEdge.Icon = null;
+                    mainCanvas.Children.Remove(edge.Icon);
+                    edge.Icon = null;
                 }
                 return;
             }
 
-            var left = menuEdge.Left ?? throw new Exception("ConstraintException: left end is null");
-            var right = menuEdge.Right ?? throw new Exception("ConstraintException: left end is null");
+            var left = edge.Left ?? throw new Exception("ConstraintException: left end is null");
+            var right = edge.Right ?? throw new Exception("ConstraintException: left end is null");
             var leftCenter = left.Center;
             var rightCenter = right.Center;
 
@@ -766,7 +804,7 @@ namespace PolygonEditor
 
             Vertex.DragVertex(vertexToMove.Item1, newPosition, vertexToMove.Item2);
 
-            menuEdge.Constraint = Constraint.Perpendicular;
+            edge.Constraint = Constraint.Perpendicular;
 
             var icon = new Image()
             {
@@ -778,7 +816,7 @@ namespace PolygonEditor
             Canvas.SetLeft(icon, newPosition.X);
             Canvas.SetTop(icon, ((leftCenter.Y + rightCenter.Y) / 2) - iconSize/2);
             mainCanvas.Children.Add(icon);
-            menuEdge.Icon = icon;
+            edge.Icon = icon;
 
             if (polygon.OffsetPolygon is not null)
             {
