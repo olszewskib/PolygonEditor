@@ -32,6 +32,7 @@ namespace PolygonEditor
                 selectedPolygonId = value;
                 offsetCheckBox.Content = FillLabel(value);
                 offsetCheckBox.IsChecked = polygons[value].OffsetPolygon is not null;
+                offsetSlider.IsEnabled = polygons[value].OffsetPolygon is not null;
             }
         }
 
@@ -155,7 +156,7 @@ namespace PolygonEditor
 
             return point;
         }
-        private BresLine initEdgeGraphic(Vertex v1, Vertex v2)
+        private BresLine initEdgeGraphic(Vertex v1, Vertex v2, bool noEvents = false)
         {
             if (v1.Graphic is null || v2.Graphic is null) throw new Exception("initEdgeGraphicException");
 
@@ -173,6 +174,8 @@ namespace PolygonEditor
                 LineColor = Brushes.Black,
                 IsBresenham = isChecked,
             };
+
+            if (noEvents) return edge;
 
             edge.MouseEnter += Edge_MouseEnter;
             edge.MouseLeave += Edge_MouseLeave;
@@ -542,7 +545,7 @@ namespace PolygonEditor
 
             var leftEdge = new Edge
             {
-                Graphic = initEdgeGraphic(left, vertex),
+                Graphic = initEdgeGraphic(left, vertex, true),
                 Left = left,
                 Right = vertex,
                 PolygonIndex = polygonIndex,
@@ -552,7 +555,7 @@ namespace PolygonEditor
 
             var rightEdge = new Edge
             {
-                Graphic = initEdgeGraphic(vertex,right),
+                Graphic = initEdgeGraphic(vertex,right, true),
                 Left = vertex,
                 Right = right,
                 PolygonIndex = polygonIndex,
@@ -574,16 +577,15 @@ namespace PolygonEditor
         // MenuItems events
         private void MenuItem_Click_RemoveVertex(object sender, RoutedEventArgs e)
         {
-            //Todo if user wants to remove a vertex from a triangel dont let him or delete the whole polygon
-            
             if (menuVertex is null) return;
             if (menuVertex.LeftEdge is null || menuVertex.RightEdge is null) throw new Exception("VertexRemovalException: null edges");
 
             var polygonIndex = menuVertex.PolygonIndex;
             var polygon = polygons[polygonIndex];
             var index = polygon.Edges.IndexOf(menuVertex.LeftEdge);
-            polygon.Edges.Remove(menuVertex.LeftEdge);
-            polygon.Edges.Remove(menuVertex.RightEdge);
+
+            // cant have a polygon with less than three vertices
+            if (polygon.Vertices.Count == 3) return;
 
             mainCanvas.Children.Remove(menuVertex.RightEdge.Graphic);
             mainCanvas.Children.Remove(menuVertex.LeftEdge.Graphic);
@@ -591,21 +593,27 @@ namespace PolygonEditor
             if (menuVertex.LeftEdge.Icon is Image leftIcon) mainCanvas.Children.Remove(leftIcon);
             if (menuVertex.RightEdge.Icon is Image rightIcon) mainCanvas.Children.Remove(rightIcon);
 
-            Vertex.RemoveVertex(menuVertex, polygons);
-
             if (menuVertex.Left is null || menuVertex.Right is null) throw new Exception("VertexRemovalException: null neighbours");
             var edge = new Edge
             {
                 Graphic = initEdgeGraphic(menuVertex.Left, menuVertex.Right),
                 Left = menuVertex.Left,
                 Right = menuVertex.Right,
-                PolygonIndex = menuVertex.PolygonIndex
+                PolygonIndex = polygonIndex 
             };
             polygon.Edges.Insert(index, edge);
+
+            Vertex.RemoveVertex(menuVertex, polygons);
             mainCanvas.Children.Add(edge.Graphic);
 
             menuVertex.Right.LeftEdge = edge;
             menuVertex.Left.RightEdge = edge;
+
+            if (polygon.OffsetPolygon is not null)
+            {
+                RemoveOffset(polygon);
+                AddOffset(polygon);
+            }
 
         }
         private void MenuItem_Click_SplitEdge(object sender, RoutedEventArgs e)
@@ -638,7 +646,16 @@ namespace PolygonEditor
                 Right = right,
             };
             DrawPoint(vertex,x,y);
-            polygons[vertex.PolygonIndex].Vertices.Add(vertex);
+
+            if(polygon.FirstVertex == right && polygon.LastVertex == left)
+            {
+               polygon.Vertices.Add(vertex);
+            }
+            else
+            {
+               var VertexIndex = polygon.Vertices.IndexOf(menuEdge.Left);
+               polygon.Vertices.Insert(VertexIndex, vertex);
+            }
 
             var leftEdge = new Edge
             {
@@ -668,10 +685,18 @@ namespace PolygonEditor
 
             vertex.LeftEdge = leftEdge;
             vertex.RightEdge = rightEdge;
+
+            // we need to watch out for parallel edges 
+            if (polygon.OffsetPolygon is not null)
+            {
+                RemoveOffset(polygon);
+                AddOffset(polygon);
+            }
         }
         private void MenuItem_Click_ParallelConstraint(object sender, RoutedEventArgs e)
         {
             if (menuEdge is null) return;
+            var polygon = polygons[menuEdge.PolygonIndex];
 
             if(menuEdge.Constraint == Constraint.Parallel)
             {
@@ -708,10 +733,17 @@ namespace PolygonEditor
             Canvas.SetTop(icon, newPosition.Y);
             mainCanvas.Children.Add(icon);
             menuEdge.Icon = icon;
+
+            if (polygon.OffsetPolygon is not null)
+            {
+                RemoveOffset(polygon);
+                AddOffset(polygon);
+            }
         }
         private void MenuItem_Click_PerpendicularConstraint(object sender, RoutedEventArgs e)
         {
             if (menuEdge is null) return;
+            var polygon = polygons[menuEdge.PolygonIndex];
 
             if(menuEdge.Constraint == Constraint.Perpendicular)
             {
@@ -748,6 +780,12 @@ namespace PolygonEditor
             Canvas.SetTop(icon, ((leftCenter.Y + rightCenter.Y) / 2) - iconSize/2);
             mainCanvas.Children.Add(icon);
             menuEdge.Icon = icon;
+
+            if (polygon.OffsetPolygon is not null)
+            {
+                RemoveOffset(polygon);
+                AddOffset(polygon);
+            }
         }
         
         // offset
@@ -762,7 +800,7 @@ namespace PolygonEditor
             foreach(var edge in polygon.Edges)
             {
                 if (edge.Right is null || edge.Right.RightEdge is null) throw new Exception();
-                (var x, var y) = Edge.OffsetIntersectionCoords(edge.Right.RightEdge, edge);
+                (var x, var y) = Edge.OffsetIntersectionCoords(edge.Right.RightEdge, edge, offset);
 
                 var vertex = new Vertex { Graphic = initPointGraphic(true) };
                 DrawPoint(vertex,x,y);
@@ -779,7 +817,7 @@ namespace PolygonEditor
                 var lastVertex = polygon.OffsetPolygon!.LastVertex;
                 var offsetEdge = new Edge
                 {
-                    Graphic = initEdgeGraphic(lastVertex, vertex),
+                    Graphic = initEdgeGraphic(lastVertex, vertex, true),
                     Left = lastVertex,
                     Right = vertex,
                     PolygonIndex = polygon.PolygonId,
@@ -798,7 +836,7 @@ namespace PolygonEditor
             var E = polygon.FirstVertex.RightEdge;
             var OffsetEdge = new Edge
             {
-                Graphic = initEdgeGraphic(LastVertex, FirstVertex),
+                Graphic = initEdgeGraphic(LastVertex, FirstVertex, true),
                 Left = LastVertex,
                 Right = FirstVertex,
                 PolygonIndex = polygon.PolygonId,

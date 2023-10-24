@@ -98,6 +98,7 @@ namespace PolygonEditor.Models
         public void FindOffset(double offset, int sgn)
         {
             if (Right is null || Left is null) throw new Exception("FindOffsetException");
+
             var a = (Right.Y - Left.Y) / (Right.X - Left.X);
             var b = Left.Y - Left.X * a;
 
@@ -105,8 +106,45 @@ namespace PolygonEditor.Models
             B = b;
             OffsetB = b + sgn * (offset * Math.Sqrt(1 + Math.Pow(a, 2)));
         }
-        public static (double x, double y) OffsetIntersectionCoords(Edge e1, Edge e2)
+        public static (double x, double y) OffsetIntersectionCoords(Edge e1, Edge e2, double offset)
         {
+            // if one of the edges is perpendicular
+            if(e1.Constraint == Constraint.Perpendicular)
+            {
+                var vector = new ArrowVector(e1.Left.Center, e1.Right.Center);
+                var sgn = vector.RetrunRightTurn();
+                var x1 = e1.Left.X + offset * sgn;
+                var y1 = e2.A * x1 + e2.OffsetB;
+                return (x1, y1);
+            }
+            else if(e2.Constraint == Constraint.Perpendicular)
+            {
+                var vector = new ArrowVector(e2.Left.Center, e2.Right.Center);
+                var sgn = vector.RetrunRightTurn();
+                var x1 = e2.Left.X + offset * sgn;
+                var y1 = e1.A * x1 + e1.OffsetB;
+                return (x1, y1);
+            }
+
+            // if we split an edge
+            if (e1.A == e2.A)
+            {
+                var middle = (e1.Right == e2.Left) ? e1.Right : e1.Left;
+
+                if(e1.A == 0)
+                {
+                    return (middle.X, e1.OffsetB);
+                }
+                
+                var a = -(1 / e1.A);
+                var b = middle.Y - a * middle.X;
+                
+                var x1 = (e1.OffsetB - b) / (a - e1.A);
+                var y1 = x1 * e2.A + e2.OffsetB;
+                return (x1, y1);
+            }
+
+            // regular case
             var x = (e1.OffsetB - e2.OffsetB) / (e2.A - e1.A);
             var y = x * e2.A + e2.OffsetB;
             return (x, y);

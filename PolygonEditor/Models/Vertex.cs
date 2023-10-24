@@ -123,6 +123,16 @@ namespace PolygonEditor.Models
             var left = vertex.Left ?? throw new Exception("RemoveVertexException: no left neighbour");
             var polygon = polygons[vertex.PolygonIndex];
 
+            // removing first/last vertex
+            if(polygon.FirstVertex == vertex)
+            {
+                polygon.FirstVertex = vertex.Right;
+            }
+            if(polygon.LastVertex == vertex)
+            {
+                polygon.LastVertex = vertex.Left;
+            }
+
             // removing vertex
             right.Left = left;
             left.Right = right;

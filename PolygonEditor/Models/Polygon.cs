@@ -84,7 +84,6 @@ namespace PolygonEditor.Models
 
                 start = start.Right;
             }
-
         }
         public void MakePolygonIntoALeftTurn()
         {
@@ -110,6 +109,9 @@ namespace PolygonEditor.Models
             {
                 (edge.Left, edge.Right) = (edge.Right, edge.Left);
             }
+
+            Vertices.Reverse();
+            Edges.Reverse();
             
         }
         public bool isVertexToCloseToPolygon(Vertex v, double offset)
