@@ -37,7 +37,7 @@
             
         <CheckBox x:Name="isBresenhamCheckBox" Content="Bresenham algorithm" VerticalAlignment="Center"/>
         <CheckBox x:Name="offsetCheckBox" Grid.Column="2"  Content="Offset: " VerticalAlignment="Center" Click="offsetCheckBox_Clicked"/>
-        <Slider x:Name="offsetSlider" IsEnabled="False" Minimum="0" Maximum="150" Value="40" Grid.Column="3" ValueChanged="offsetSlider_ValueChanged"/>
+        <Slider x:Name="offsetSlider" IsEnabled="False" Minimum="10" Maximum="100" Value="40" Grid.Column="3" ValueChanged="offsetSlider_ValueChanged"/>
         <Canvas Name="mainCanvas" 
             Grid.Row="1"
             Grid.ColumnSpan="5"

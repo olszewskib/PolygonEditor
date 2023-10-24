@@ -119,7 +119,7 @@ namespace PolygonEditor
             }
             else if (isSymetricBresenham)
             {
-                // symetric bresenham
+
             }
         }
     }
