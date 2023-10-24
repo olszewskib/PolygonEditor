@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -13,6 +14,8 @@ namespace PolygonEditor
 {
     internal class BresLine : UIElement
     {
+        public int UpperLimitX = 3840;
+        public int UpperLimitY = 2160;
         public double X1 { get; set; }
         public double Y1 { get; set; }
         public double X2 { get; set; }
@@ -43,12 +46,10 @@ namespace PolygonEditor
         {
             
         }
-
         public void Redraw()
         {
             this.InvalidateVisual();
         }
-
         protected override void OnRender(DrawingContext drawingContext)
         {
             base.OnRender(drawingContext);
@@ -60,10 +61,13 @@ namespace PolygonEditor
             else
             {
                 Pen pen = new Pen(lineColor, 2);
-                int x1 = (int)X1;
-                int y1 = (int)Y1;
-                int x2 = (int)X2;
-                int y2 = (int)Y2;
+                int x1 = X1 > UpperLimitX ? UpperLimitX : (int)X1;
+                int y1 = Y1 > UpperLimitY ? UpperLimitY : (int)Y1;
+                int x2 = X2 > UpperLimitX ? UpperLimitX : (int)X2;
+                int y2 = Y2 > UpperLimitY ? UpperLimitY : (int)Y2;
+
+                Debug.Print($"[{x1},{y1}]");
+                Debug.Print($"[{x2},{y2}]");
 
                 int dx = Math.Abs(x2 - x1);
                 int dy = Math.Abs(y2 - y1);

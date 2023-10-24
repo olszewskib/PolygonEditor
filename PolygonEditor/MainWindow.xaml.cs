@@ -686,7 +686,6 @@ namespace PolygonEditor
             vertex.LeftEdge = leftEdge;
             vertex.RightEdge = rightEdge;
 
-            // we need to watch out for parallel edges 
             if (polygon.OffsetPolygon is not null)
             {
                 RemoveOffset(polygon);

@@ -39,10 +39,6 @@ namespace PolygonEditor.Models
             LastVertex = v;
             Vertices.Add(v);
         }
-        public void InsertVertexAt(Vertex v, Edge e)
-        {
-            throw new NotImplementedException();
-        }
         public void AddEdge(Edge e)
         {
             // last vertex is changed after

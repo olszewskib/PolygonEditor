@@ -25,7 +25,6 @@ namespace PolygonEditor.Models
         public double Start => EndPoint.X - StartPoint.X;
         public double End => EndPoint.Y - StartPoint.Y;
         public double Length => Math.Sqrt(Math.Pow(Start, 2) + Math.Pow(End, 2));
-
         public ArrowVector(Point StartPoint, Point EndPoint)
         {
             this.StartPoint = StartPoint;
@@ -36,7 +35,6 @@ namespace PolygonEditor.Models
             this.StartPoint = StartPoint.Center;
             this.EndPoint = EndPoint.Center;
         }
-
         public int RetrunRightTurn()
         {
             var quadrant = checkVectorOrientation(this);
@@ -53,7 +51,6 @@ namespace PolygonEditor.Models
             // safety
             return 1;
         }
-
         public static Quadrant checkVectorOrientation(ArrowVector vector)
         {
             var deltaX = -vector.StartPoint.X;
@@ -70,7 +67,6 @@ namespace PolygonEditor.Models
             if (newEndY < 0 || newEndX > 0) return Quadrant.AxisP;
             return Quadrant.AxisM;
         }
-
         public static double VectorProduct(Point p1, Point p2)
         {
             return p1.X * p2.Y - p2.X * p1.Y;
