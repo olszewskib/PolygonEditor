@@ -251,9 +251,22 @@ namespace PolygonEditor
             perpendicular.Click += MenuItem_Click_PerpendicularConstraint;
             perpendicular.IsEnabled = isPerpendicularValid();
 
+            var width3 = new MenuItem();
+            width3.Header = "Change width to default";
+            width3.Click += MenuItem_ChangeWidthToDefault;
+            var width5 = new MenuItem();
+            width5.Header = "Change width to 5";
+            width5.Click += MenuItem_ChangeWidthTo5;
+            var width7 = new MenuItem();
+            width7.Header = "Change width to 7";
+            width7.Click += MenuItem_ChangeWidthTo7;
+
             contextMenu.Items.Add(split);
             contextMenu.Items.Add(parallel);
             contextMenu.Items.Add(perpendicular);
+            contextMenu.Items.Add(width3);
+            contextMenu.Items.Add(width5);
+            contextMenu.Items.Add(width7);
 
             return contextMenu;
         }
@@ -1016,6 +1029,22 @@ namespace PolygonEditor
                     RemoveOffset(polygon);
                 }
             }
+        }
+
+        private void MenuItem_ChangeWidthToDefault(object sender, RoutedEventArgs e)
+        {
+            if (menuEdge is null) return;
+            menuEdge.Graphic.LineWidth = 3;
+        }
+        private void MenuItem_ChangeWidthTo5(object sender, RoutedEventArgs e)
+        {
+            if (menuEdge is null) return;
+            menuEdge.Graphic.LineWidth = 5;
+        }
+        private void MenuItem_ChangeWidthTo7(object sender, RoutedEventArgs e)
+        {
+            if (menuEdge is null) return;
+            menuEdge.Graphic.LineWidth = 7;
         }
     }
     

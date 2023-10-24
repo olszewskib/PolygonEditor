@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -32,6 +33,17 @@ namespace PolygonEditor
             }
         }
 
+        public bool isSymetricBresenham = false;
+        public bool IsSymetricBresenham
+        {
+            get { return isSymetricBresenham;  }
+            set
+            {
+                isSymetricBresenham = value;
+                this.Redraw();
+            }
+        }
+
         private Brush lineColor = Brushes.Red;
         public Brush LineColor
         {
@@ -41,6 +53,18 @@ namespace PolygonEditor
                 lineColor = value;
                 this.Redraw();
             }
+        }
+
+        private int lineWidth = Edge.Width;
+        public int LineWidth
+        {
+            get { return lineWidth; }
+            set
+            {
+                lineWidth = value;
+                this.Redraw();
+            }
+
         }
         public BresLine()
         {
@@ -55,10 +79,10 @@ namespace PolygonEditor
             base.OnRender(drawingContext);
             if (!isBresengam)
             {
-                Pen line = new Pen(lineColor, Edge.Width);
+                Pen line = new Pen(lineColor, lineWidth);
                 drawingContext.DrawLine(line,new Point(X1,Y1), new Point(X2,Y2));
             }
-            else
+            else if (isBresengam)
             {
                 Pen pen = new Pen(lineColor, 2);
                 int x1 = X1 > UpperLimitX ? UpperLimitX : (int)X1;
@@ -74,7 +98,7 @@ namespace PolygonEditor
 
                 while (true)
                 {
-                    drawingContext.DrawRectangle(pen.Brush, pen, new Rect(x1, y1, 1, 1));
+                    drawingContext.DrawRectangle(pen.Brush, pen, new Rect(x1, y1, 1, lineWidth));
 
                     if (x1 == x2 && y1 == y2)
                         break;
@@ -92,6 +116,10 @@ namespace PolygonEditor
                         y1 += sy;
                     }
                 }
+            }
+            else if (isSymetricBresenham)
+            {
+                // symetric bresenham
             }
         }
     }
