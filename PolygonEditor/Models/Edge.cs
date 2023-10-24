@@ -127,7 +127,7 @@ namespace PolygonEditor.Models
             }
 
             // if we split an edge
-            if (e1.A == e2.A)
+            if (e1.A * e2.A > 0 && Math.Abs(Math.Abs(e1.A) - Math.Abs(e2.A)) < 0.000001)
             {
                 var middle = (e1.Right == e2.Left) ? e1.Right : e1.Left;
 
